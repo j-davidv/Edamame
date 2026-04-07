@@ -2,10 +2,8 @@ using LiteDB;
 
 namespace Edamam.Domain.Entities;
 
-/// <summary>
-/// Represents a recipe (a collection of ingredients).
-/// Encapsulates recipe details and ingredients.
-/// </summary>
+/// class of recipe
+
 public class Recipe
 {
     [BsonId]

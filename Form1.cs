@@ -37,7 +37,7 @@ namespace Edamam
                 BtnClearChat.Click += BtnClearChat_Click;
                 TextBoxChatInput.KeyDown += TextBoxChatInput_KeyDown;
 
-                // Disable chat if service is not available
+                // disables chat if service is not available
                 if (_chatService == null)
                 {
                     BtnSendMessage.Enabled = false;
@@ -45,10 +45,9 @@ namespace Edamam
                     TextBoxChatHistory.Text = "Gemini Chat Service not available.\nPlease ensure GOOGLE_API_KEY is set.";
                 }
 
-                // Load initial data
+                // load initial data
                 await RefreshMealsAsync();
 
-                // Show dashboard by default
                 ShowDashboardPanel();
             }
             catch (Exception ex)
@@ -61,7 +60,7 @@ namespace Edamam
         {
             try
             {
-                // Get all meals from the repository
+                // get all meals
                 var mealRepository = _serviceProvider.GetRequiredService<IRepository<Meal>>();
                 var allMeals = await mealRepository.GetAllAsync();
                 _allMeals = allMeals.ToList();
@@ -255,7 +254,7 @@ namespace Edamam
                 }
             };
 
-            // Search functionality
+            // search function
             searchBox.TextChanged += (s, e) =>
             {
                 string searchTerm = searchBox.Text.ToLower();
@@ -464,7 +463,7 @@ namespace Edamam
 
             var recipesLabel = new Label { Text = "Recipes & Ingredients:", Font = new Font("Segoe UI", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 10, 0, 3) };
 
-            // Build recipes text for editing
+            // build recipes text for editing
             var recipesText = new StringBuilder();
             if (meal.Recipes != null)
             {
@@ -534,7 +533,7 @@ namespace Edamam
                     meal.Type = (MealType)mealTypeCombo.SelectedIndex;
                     meal.MealDate = mealDatePicker.Value;
 
-                    // Parse updated recipes from text
+                    // parse updated recipes from text
                     var recipes = new List<Recipe>();
                     var ingredients = new List<Ingredient>();
 
@@ -637,7 +636,7 @@ namespace Edamam
             var totalSugarToday = mealsForToday.Sum(m => m.Nutritionals?.Sugar ?? 0);
             var totalSaturatedFatToday = mealsForToday.Sum(m => m.Nutritionals?.SaturatedFat ?? 0);
 
-            // Metrics Section
+            // metrics Section
             var metricsHeaderLabel = new Label
             {
                 Text = "Daily Totals",
@@ -660,7 +659,7 @@ namespace Edamam
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            // Create text-based metric labels with improved spacing
+            // text-based metric labels
             var caloriesLabel = new Label
             {
                 Text = $"• Total Calories: {totalCaloriesToday:F0} kcal",

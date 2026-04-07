@@ -3,10 +3,8 @@ using Edamam.Domain.Interfaces;
 
 namespace Edamam.Application.Services;
 
-/// <summary>
-/// Provides use-case orchestration for meal operations.
-/// Coordinates between repositories and services (Application layer).
-/// </summary>
+/// coordinates between repos and services (the application layer)
+
 public class MealService
 {
     private readonly IRepository<Meal> _mealRepository;
@@ -26,9 +24,9 @@ public class MealService
         _dailyAggregator = dailyAggregator ?? throw new ArgumentNullException(nameof(dailyAggregator));
     }
 
-    /// <summary>
-    /// Creates a new meal and analyzes its nutritional content.
-    /// </summary>
+
+    /// creates a new meal and analyzes its nutritional content
+
     public async Task<Meal> CreateAndAnalyzeMealAsync(Meal meal)
     {
         if (meal == null) throw new ArgumentNullException(nameof(meal));
@@ -42,49 +40,39 @@ public class MealService
         return meal;
     }
 
-    /// <summary>
-    /// Gets all meals for a specific date.
-    /// </summary>
+    /// sgets all meals for a specific date
+
     public async Task<IEnumerable<Meal>> GetMealsForDateAsync(DateTime date)
     {
         return await _dailyAggregator.GetMealsForDateAsync(date);
     }
 
-    /// <summary>
-    /// Gets the daily nutritional summary.
-    /// </summary>
+    /// gets the daily nutritional summary
     public async Task<string> GetDailySummaryAsync(DateTime date)
     {
         return await _dailyAggregator.GetDailySummaryAsync(date);
     }
 
-    /// <summary>
-    /// Retrieves a meal by ID.
-    /// </summary>
+    /// retrieves a meal by ID
     public async Task<Meal?> GetMealByIdAsync(string id)
     {
         return await _mealRepository.GetByIdAsync(id);
     }
 
-    /// <summary>
-    /// Updates a meal's nutritional information.
-    /// </summary>
+    /// updates a meal's nutritional information
     public async Task<bool> UpdateMealAsync(string id, Meal meal)
     {
         return await _mealRepository.UpdateAsync(id, meal);
     }
 
-    /// <summary>
-    /// Deletes a meal by ID.
-    /// </summary>
+    /// deletes a meal by ID
     public async Task<bool> DeleteMealAsync(string id)
     {
         return await _mealRepository.DeleteAsync(id);
     }
 
-    /// <summary>
-    /// Creates and analyzes a recipe.
-    /// </summary>
+    /// creates and analyzes a recipe
+
     public async Task<Recipe> CreateAndAnalyzeRecipeAsync(Recipe recipe)
     {
         if (recipe == null) throw new ArgumentNullException(nameof(recipe));
@@ -95,9 +83,7 @@ public class MealService
         return recipe;
     }
 
-    /// <summary>
-    /// Gets all recipes.
-    /// </summary>
+    /// ghets all recipes
     public async Task<IEnumerable<Recipe>> GetAllRecipesAsync()
     {
         return await _recipeRepository.GetAllAsync();

@@ -2,24 +2,14 @@ using Edamam.Domain.Entities;
 
 namespace Edamam.Domain.Interfaces;
 
-/// <summary>
-/// Abstraction for nutrition analysis service (Dependency Inversion).
-/// Defines contract for AI-based nutritional analysis.
-/// </summary>
+/// abstraction for nutrition analysis service
+/// defines contract for AI-based nutritional analysis
 public interface INutritionAnalysisService
 {
-    /// <summary>
-    /// Analyzes a meal and returns its nutritional composition.
-    /// </summary>
     Task<NutritionalMetric> AnalyzeMealAsync(Meal meal);
 
-    /// <summary>
-    /// Analyzes a recipe and returns its nutritional composition.
-    /// </summary>
     Task<NutritionalMetric> AnalyzeRecipeAsync(Recipe recipe);
 
-    /// <summary>
-    /// Gets dietary advice for a meal.
-    /// </summary>
+    /// Gets dietary advice for a meal
     Task<string> GetDietaryAdviceAsync(Meal meal);
 }

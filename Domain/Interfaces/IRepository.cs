@@ -1,8 +1,7 @@
 namespace Edamam.Domain.Interfaces;
 
-/// <summary>
-/// Abstraction for generic repository operations (Dependency Inversion).
-/// </summary>
+/// abstraction for generic repository operations
+
 public interface IRepository<T>
 {
     Task<T?> GetByIdAsync(string id);

@@ -9,29 +9,27 @@ namespace Edamam
 {
     internal static class Program
     {
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
+        //  THE MAINNN
         [STAThread]
         static void Main()
         {
-            // Setup Dependency Injection container
+            // initialize dependency injection container
             var services = new ServiceCollection();
 
-            // Load configuration from appsettings.json
+            // load configuration from appsettings.json (GEMINI API KEY)
             var config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables()
                 .Build();
 
-            // Register Google Gemini API credentials (from environment variables or appsettings.json)
+            // register Google Gemini API credentials (from environment variables or appsettings.json)
             string? geminiApiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY") 
                 ?? config["GeminiApiKey"];
             services.AddMealTrackerServices(geminiApiKey);
 
             var serviceProvider = services.BuildServiceProvider();
 
-            // Create and run the main form with DI container
+            // create and run the main form with DI container
             var form = new Form1(serviceProvider);
             RunWindowsFormsApp(form);
         }

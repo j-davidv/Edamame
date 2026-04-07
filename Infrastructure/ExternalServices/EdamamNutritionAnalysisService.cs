@@ -7,10 +7,8 @@ using Edamam.Domain.Interfaces;
 
 namespace Edamam.Infrastructure.ExternalServices;
 
-/// <summary>
-/// Implements INutritionAnalysisService using Gemini 2.5 Flash API.
-/// Provides accurate nutritional analysis with AI-powered ingredient parsing and evaluation.
-/// </summary>
+// implements INutritionAnalysisService using Gemini 2.5 Flash API
+
 public class GeminiNutritionAnalysisService : INutritionAnalysisService
 {
     private readonly Client _geminiClient;
@@ -24,20 +22,19 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
         _geminiClient = new Client(apiKey: apiKey);
     }
 
-    /// <summary>
-    /// Analyzes a meal using Gemini API.
-    /// </summary>
+
+    // analyzes a meal using Gemini API
     public async Task<NutritionalMetric> AnalyzeMealAsync(Meal meal)
     {
         if (meal == null) throw new ArgumentNullException(nameof(meal));
 
-        // Defensive check: ensure Recipes is not null
+        // defensive check
         if (meal.Recipes == null)
         {
             meal.Recipes = new List<Recipe>();
         }
 
-        // Combine all ingredients from recipes
+        // combine all ingredients from recipes
         var allIngredients = meal.Recipes
             .Where(r => r != null && r.Ingredients != null)
             .SelectMany(r => r.Ingredients)
@@ -83,9 +80,8 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
         }
     }
 
-    /// <summary>
-    /// Analyzes a recipe using Gemini API.
-    /// </summary>
+    // analyzes a recipe
+
     public async Task<NutritionalMetric> AnalyzeRecipeAsync(Recipe recipe)
     {
         if (recipe == null) throw new ArgumentNullException(nameof(recipe));
@@ -132,9 +128,6 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
         }
     }
 
-    /// <summary>
-    /// Gets dietary advice for a meal using calculated nutritional data.
-    /// </summary>
     public async Task<string> GetDietaryAdviceAsync(Meal meal)
     {
         if (meal == null) throw new ArgumentNullException(nameof(meal));
@@ -169,10 +162,8 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
         return string.Join(" ", advice);
     }
 
-    /// <summary>
-    /// Calls Gemini API with ingredient list and structured JSON response.
-    /// Uses strict JSON schema to ensure machine-readable responses.
-    /// </summary>
+
+    //strict JSON schema
     private async Task<GeminiNutritionData> CallGeminiApiAsync(List<string> ingredients)
     {
         try
@@ -222,10 +213,10 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
 
             System.Diagnostics.Debug.WriteLine($"Gemini Response: {responseText}");
 
-            // Clean the response (remove markdown code blocks if present)
+            // Clean the response
             var cleanedResponse = CleanJsonResponse(responseText);
 
-            // Parse JSON response using System.Text.Json with case-insensitive matching
+            // parse JSON response using System.Text.Json with case-insensitive matching
             using (var doc = JsonDocument.Parse(cleanedResponse))
             {
                 var root = doc.RootElement;
@@ -260,9 +251,7 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         }
     }
 
-    /// <summary>
-    /// Cleans JSON response by removing markdown code blocks if present.
-    /// </summary>
+    // cleans JSON response by removing markdown code blocks if present
     private static string CleanJsonResponse(string response)
     {
         response = response.Trim();
@@ -290,9 +279,6 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         return response.Trim();
     }
 
-    /// <summary>
-    /// Extracts numeric value from JSON element by property name (case-insensitive).
-    /// </summary>
     private static double ExtractNumericValue(JsonElement root, string propertyName)
     {
         // Try exact match first
@@ -313,9 +299,6 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         return 0;
     }
 
-    /// <summary>
-    /// Safely extracts double value from JsonElement.
-    /// </summary>
     private static double ExtractDouble(JsonElement element)
     {
         try
@@ -335,15 +318,12 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         }
         catch
         {
-            // Fall through to return 0
+           
         }
 
         return 0;
     }
 
-    /// <summary>
-    /// Determines dietary classification based on nutritional data.
-    /// </summary>
     private static string DetermineDietaryClassification(GeminiNutritionData data)
     {
         var classifications = new List<string>();
@@ -371,9 +351,8 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         return string.Join(", ", classifications);
     }
 
-    /// <summary>
-    /// Generates simple dietary advice based on nutritional profile.
-    /// </summary>
+    // Generates simple dietary advice based on nutritional profile
+
     private static string GenerateDietaryAdvice(GeminiNutritionData data)
     {
         if (data.Calories > 2000)
@@ -392,9 +371,9 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
     }
 }
 
-/// <summary>
-/// Data structure for processed Gemini nutrition data.
-/// </summary>
+
+//Data structure for processed Gemini nutrition data
+
 internal class GeminiNutritionData
 {
     public double Calories { get; set; }

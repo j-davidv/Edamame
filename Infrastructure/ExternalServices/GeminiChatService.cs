@@ -4,10 +4,9 @@ using Edamam.Domain.Interfaces;
 
 namespace Edamam.Infrastructure.ExternalServices;
 
-/// <summary>
-/// Implements IGeminiChatService using Gemini 2.5 Flash API.
-/// Provides conversational AI assistant for nutrition-related questions and general chat.
-/// </summary>
+/// Implements IGeminiChatService
+/// conversational AI assistant
+
 public class GeminiChatService : IGeminiChatService
 {
     private readonly Client _geminiClient;
@@ -23,17 +22,16 @@ public class GeminiChatService : IGeminiChatService
         _conversationHistory = new List<(string, string)>();
     }
 
-    /// <summary>
-    /// Sends a message to the Gemini chatbot and gets a response.
-    /// </summary>
+
+    // sends a message to the Gemini chatbot and gets a response
     public async Task<string> ChatAsync(string userMessage)
     {
         return await ChatWithContextAsync(userMessage, null);
     }
 
-    /// <summary>
-    /// Sends a message with optional context about nutrition/meals.
-    /// </summary>
+
+    // Sends a message with optional context about nutrition/meals
+
     public async Task<string> ChatWithContextAsync(string userMessage, string? context = null)
     {
         if (string.IsNullOrWhiteSpace(userMessage))
@@ -108,9 +106,8 @@ You are friendly, supportive, and encouraging. Keep responses concise but inform
         }
     }
 
-    /// <summary>
-    /// Clears the conversation history.
-    /// </summary>
+    /// clears the conversation history
+
     public async Task ClearHistoryAsync()
     {
         _conversationHistory.Clear();

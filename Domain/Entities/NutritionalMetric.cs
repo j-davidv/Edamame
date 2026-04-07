@@ -1,9 +1,7 @@
 namespace Edamam.Domain.Entities;
 
-/// <summary>
-/// Represents nutritional metrics for a meal or recipe.
-/// Encapsulates calculated nutritional data.
-/// </summary>
+/// inherts from base
+/// encapsulates calculated nutritional data
 public class NutritionalMetric : NutritionalBase
 {
     public string MealName { get; set; } = string.Empty;

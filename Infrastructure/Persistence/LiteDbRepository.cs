@@ -3,10 +3,9 @@ using Edamam.Domain.Interfaces;
 
 namespace Edamam.Infrastructure.Persistence;
 
-/// <summary>
-/// Generic repository implementation for LiteDB with thread-safe operations.
-/// Implements Dependency Inversion through IRepository interface.
-/// </summary>
+///repository implementation for LiteDB with thread-safe operations
+/// dependency Inversion through IRepository interface
+
 public class LiteDbRepository<T> : IRepository<T>
 {
     private readonly ILiteDatabase _database;
@@ -21,9 +20,8 @@ public class LiteDbRepository<T> : IRepository<T>
         _collection = _database.GetCollection<T>(_collectionName);
     }
 
-    /// <summary>
-    /// Gets an entity by its ID with thread-safe read operation.
-    /// </summary>
+    /// gets an entity by its ID with thread-safe read operation
+
     public async Task<T?> GetByIdAsync(string id)
     {
         return await Task.Run(() =>
@@ -48,9 +46,6 @@ public class LiteDbRepository<T> : IRepository<T>
         });
     }
 
-    /// <summary>
-    /// Gets all entities with thread-safe read operation.
-    /// </summary>
     public async Task<IEnumerable<T>> GetAllAsync()
     {
         return await Task.Run(() =>
@@ -67,9 +62,6 @@ public class LiteDbRepository<T> : IRepository<T>
         });
     }
 
-    /// <summary>
-    /// Creates a new entity with thread-safe write operation.
-    /// </summary>
     public async Task<string> CreateAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
@@ -94,9 +86,6 @@ public class LiteDbRepository<T> : IRepository<T>
         });
     }
 
-    /// <summary>
-    /// Updates an existing entity with thread-safe write operation.
-    /// </summary>
     public async Task<bool> UpdateAsync(string id, T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
@@ -127,9 +116,6 @@ public class LiteDbRepository<T> : IRepository<T>
         });
     }
 
-    /// <summary>
-    /// Deletes an entity with thread-safe write operation.
-    /// </summary>
     public async Task<bool> DeleteAsync(string id)
     {
         return await Task.Run(() =>

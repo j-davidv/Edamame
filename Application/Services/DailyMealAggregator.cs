@@ -3,10 +3,10 @@ using Edamam.Domain.Interfaces;
 
 namespace Edamam.Application.Services;
 
-/// <summary>
-/// Implements IDailyMealAggregator for daily nutritional aggregation.
-/// Aggregates meals from LiteDB and calculates daily totals.
-/// </summary>
+
+/// Implements IDailyMealAggregator for daily nutritional computation.
+/// Computes meals from LiteDB and calculates daily totals.
+
 public class DailyMealAggregator : IDailyMealAggregator
 {
     private readonly IRepository<Meal> _mealRepository;
@@ -16,9 +16,7 @@ public class DailyMealAggregator : IDailyMealAggregator
         _mealRepository = mealRepository ?? throw new ArgumentNullException(nameof(mealRepository));
     }
 
-    /// <summary>
     /// Gets all meals for a specific date.
-    /// </summary>
     public async Task<IEnumerable<Meal>> GetMealsForDateAsync(DateTime date)
     {
         var allMeals = await _mealRepository.GetAllAsync();
@@ -27,10 +25,8 @@ public class DailyMealAggregator : IDailyMealAggregator
         return allMeals.Where(m => m.MealDate.Date == targetDate).ToList();
     }
 
-    /// <summary>
     /// Calculates daily totals for all nutritional metrics.
-    /// Aggregates nutritional data from all meals for the day (Abstraction for processing).
-    /// </summary>
+
     public async Task<NutritionalMetric> GetDailyTotalsAsync(DateTime date)
     {
         var mealsForDay = await GetMealsForDateAsync(date);
@@ -57,7 +53,7 @@ public class DailyMealAggregator : IDailyMealAggregator
             SaturatedFat = 0
         };
 
-        // Aggregate nutritional data from all meals
+        // compiles nutritional data from all meals
         foreach (var meal in mealsForDay)
         {
             if (meal.Nutritionals != null)
@@ -75,9 +71,6 @@ public class DailyMealAggregator : IDailyMealAggregator
         return totals;
     }
 
-    /// <summary>
-    /// Gets daily nutritional summary as a formatted string for UI binding.
-    /// </summary>
     public async Task<string> GetDailySummaryAsync(DateTime date)
     {
         var dailyTotals = await GetDailyTotalsAsync(date);

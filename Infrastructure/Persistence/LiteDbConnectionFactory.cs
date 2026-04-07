@@ -2,10 +2,10 @@ using LiteDB;
 
 namespace Edamam.Infrastructure.Persistence;
 
-/// <summary>
-/// Factory for creating and managing LiteDB connections with thread-safety.
-/// Ensures singleton pattern for database instance.
-/// </summary>
+
+// managing LiteDB connections
+
+
 public class LiteDbConnectionFactory
 {
     private static ILiteDatabase? _instance;
@@ -26,9 +26,6 @@ public class LiteDbConnectionFactory
         _connectionString = $"Filename={dbFile};Connection=shared";
     }
 
-    /// <summary>
-    /// Gets or creates the singleton LiteDB instance (thread-safe).
-    /// </summary>
     public ILiteDatabase GetDatabase()
     {
         if (_instance != null) return _instance;
@@ -44,9 +41,6 @@ public class LiteDbConnectionFactory
         }
     }
 
-    /// <summary>
-    /// Configures BsonMapper for complex nested objects.
-    /// </summary>
     private void ConfigureBsonMapper(ILiteDatabase database)
     {
         var mapper = BsonMapper.Global;
@@ -61,9 +55,6 @@ public class LiteDbConnectionFactory
         mapper.Entity<Edamam.Domain.Entities.NutritionalMetric>();
     }
 
-    /// <summary>
-    /// Closes the database connection (use with caution).
-    /// </summary>
     public void CloseDatabase()
     {
         lock (_lock)

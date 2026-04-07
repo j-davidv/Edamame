@@ -8,15 +8,9 @@ using Edamam.Infrastructure.Persistence;
 
 namespace Edamam.Infrastructure.Configuration;
 
-/// <summary>
-/// Dependency Injection configuration following SOLID principles.
-/// Centralizes service registration and dependency setup.
-/// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// Registers all application services with DI container.
-    /// </summary>
+    // registers all application services with DI container
     public static IServiceCollection AddMealTrackerServices(
         this IServiceCollection services,
         string? geminiApiKey = null,
@@ -33,27 +27,27 @@ public static class ServiceCollectionExtensions
                 "Gemini API key is required. Set GOOGLE_API_KEY environment variable.");
         }
 
-        // Infrastructure: Persistence
+        // persistence
         var connectionFactory = new LiteDbConnectionFactory(databasePath);
         var database = connectionFactory.GetDatabase();
         services.AddSingleton(database);
         services.AddSingleton(connectionFactory);
 
-        // Infrastructure: Repositories (Dependency Inversion)
+        // infra repos
         services.AddScoped<IRepository<Meal>>(provider =>
             new LiteDbRepository<Meal>(provider.GetRequiredService<ILiteDatabase>()));
 
         services.AddScoped<IRepository<Recipe>>(provider =>
             new LiteDbRepository<Recipe>(provider.GetRequiredService<ILiteDatabase>()));
 
-        // Infrastructure: External Services (Dependency Inversion)
+        // external svc
         services.AddScoped<INutritionAnalysisService>(provider =>
             new GeminiNutritionAnalysisService(geminiApiKey));
 
         services.AddScoped<IGeminiChatService>(provider =>
             new GeminiChatService(geminiApiKey));
 
-        // Application: Business Logic Services
+        // aggregator
         services.AddScoped<IDailyMealAggregator>(provider =>
             new DailyMealAggregator(provider.GetRequiredService<IRepository<Meal>>()));
 

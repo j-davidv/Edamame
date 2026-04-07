@@ -2,10 +2,9 @@ using LiteDB;
 
 namespace Edamam.Domain.Entities;
 
-/// <summary>
-/// Represents a single ingredient in a recipe.
-/// Encapsulates ingredient details and quantity.
-/// </summary>
+
+/// encapsulation of ingredient details and quantity
+
 public class Ingredient
 {
     public ObjectId Id { get; set; }

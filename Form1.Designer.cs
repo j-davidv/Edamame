@@ -29,7 +29,7 @@ namespace Edamam
             mainTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));   // Main Content
             mainTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300));  // Chat
 
-            // =============== SIDE NAVIGATION PANEL ===============
+            // SIDE NAVIGATION PANEL 
             var sideNavPanel = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -58,7 +58,7 @@ namespace Edamam
 
             sideNavPanel.Controls.Add(navFlowPanel);
 
-            // =============== LEFT PANEL - INPUT FORM ===============
+            // LEFT PANEL - INPUT FORM
             var inputTableLayout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -165,7 +165,7 @@ namespace Edamam
             inputTableLayout.Controls.Add(TextBoxRecipes, 0, 8);
             inputTableLayout.Controls.Add(BtnCreateMeal, 0, 9);
 
-            // =============== CENTER PANEL - MAIN CONTENT ===============
+            // CENTER PANEL - MAIN CONTENT
             ContentPanel = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -173,7 +173,7 @@ namespace Edamam
                 Padding = new Padding(15),
             };
 
-            // =============== RIGHT PANEL - GEMINI CHAT ===============
+            // RIGHT PANEL - GEMINI CHAT
             var chatTableLayout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -249,13 +249,13 @@ namespace Edamam
 
             ChatPanel = chatTableLayout;
 
-            // Add panels to main layout
+            // add panels to main layout
             mainTableLayout.Controls.Add(sideNavPanel, 0, 0);
             mainTableLayout.Controls.Add(InputPanel, 1, 0);
             mainTableLayout.Controls.Add(ContentPanel, 2, 0);
             mainTableLayout.Controls.Add(ChatPanel, 3, 0);
 
-            // Status Bar
+            // status bar
             StatusStrip = new StatusStrip
             {
                 BackColor = Color.FromArgb(250, 250, 250),
@@ -271,7 +271,7 @@ namespace Edamam
             };
             StatusStrip.Items.Add(StatusLabel);
 
-            // Form Setup
+            // form setup
             Controls.Add(mainTableLayout);
             Controls.Add(StatusStrip);
             ClientSize = new Size(1600, 700);
@@ -335,7 +335,7 @@ namespace Edamam
             return btn;
         }
 
-        // Designer Controls
+        // designer Controls
         public Panel InputPanel;
         public Panel ContentPanel;
         public Panel ChatPanel;
