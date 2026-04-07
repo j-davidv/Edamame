@@ -3,7 +3,7 @@ using Edamam.Domain.Interfaces;
 
 namespace Edamam.Application.Services;
 
-/// coordinates between repos and services (the application layer)
+// coordinates between repos and services (the application layer)
 
 public class MealService
 {
@@ -25,7 +25,7 @@ public class MealService
     }
 
 
-    /// creates a new meal and analyzes its nutritional content
+    // creates a new meal and analyzes its nutritional content
 
     public async Task<Meal> CreateAndAnalyzeMealAsync(Meal meal)
     {
@@ -40,7 +40,7 @@ public class MealService
         return meal;
     }
 
-    /// sgets all meals for a specific date
+    // sgets all meals for a specific date
 
     public async Task<IEnumerable<Meal>> GetMealsForDateAsync(DateTime date)
     {
@@ -53,25 +53,25 @@ public class MealService
         return await _dailyAggregator.GetDailySummaryAsync(date);
     }
 
-    /// retrieves a meal by ID
+    // retrieves a meal by ID
     public async Task<Meal?> GetMealByIdAsync(string id)
     {
         return await _mealRepository.GetByIdAsync(id);
     }
 
-    /// updates a meal's nutritional information
+    // updates a meal's nutritional information
     public async Task<bool> UpdateMealAsync(string id, Meal meal)
     {
         return await _mealRepository.UpdateAsync(id, meal);
     }
 
-    /// deletes a meal by ID
+    // deletes a meal by ID
     public async Task<bool> DeleteMealAsync(string id)
     {
         return await _mealRepository.DeleteAsync(id);
     }
 
-    /// creates and analyzes a recipe
+    // creates and analyzes a recipe
 
     public async Task<Recipe> CreateAndAnalyzeRecipeAsync(Recipe recipe)
     {
@@ -83,7 +83,7 @@ public class MealService
         return recipe;
     }
 
-    /// ghets all recipes
+    // ghets all recipes
     public async Task<IEnumerable<Recipe>> GetAllRecipesAsync()
     {
         return await _recipeRepository.GetAllAsync();

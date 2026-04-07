@@ -4,8 +4,11 @@ using Edamam.Domain.Interfaces;
 namespace Edamam.Application.Services;
 
 
-/// Implements IDailyMealAggregator for daily nutritional computation.
-/// Computes meals from LiteDB and calculates daily totals.
+/// <summary>
+/// Implements IDailyMealAggregator for daily nutritional computation
+/// computes meals from LiteDB and calculates daily totals
+/// </summary>
+
 
 public class DailyMealAggregator : IDailyMealAggregator
 {
@@ -16,7 +19,7 @@ public class DailyMealAggregator : IDailyMealAggregator
         _mealRepository = mealRepository ?? throw new ArgumentNullException(nameof(mealRepository));
     }
 
-    /// Gets all meals for a specific date.
+    // Gets all meals for a specific date
     public async Task<IEnumerable<Meal>> GetMealsForDateAsync(DateTime date)
     {
         var allMeals = await _mealRepository.GetAllAsync();
@@ -25,7 +28,7 @@ public class DailyMealAggregator : IDailyMealAggregator
         return allMeals.Where(m => m.MealDate.Date == targetDate).ToList();
     }
 
-    /// Calculates daily totals for all nutritional metrics.
+    // Calculates daily totals for all nutritional metrics
 
     public async Task<NutritionalMetric> GetDailyTotalsAsync(DateTime date)
     {

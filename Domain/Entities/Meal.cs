@@ -2,7 +2,7 @@ using LiteDB;
 
 namespace Edamam.Domain.Entities;
 
-/// encapsulattons of meal details and polymorphic processing.
+/// encapsulattons of meal details and polymorphic processing
 
 public class Meal
 {
