@@ -1,4 +1,4 @@
-namespace TEST
+namespace Edamam
 {
     partial class Form1
     {
@@ -34,21 +34,8 @@ namespace TEST
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.White,
-                Padding = new Padding(15, 20, 15, 20),
-                BorderStyle = BorderStyle.FixedSingle
+                Padding = new Padding(15, 20, 15, 20)
             };
-
-            // Navigation header
-            var navHeader = new Label
-            {
-                Text = "",
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 33, 33),
-                AutoSize = true,
-                Margin = new Padding(0, 0, 0, 20),
-                Dock = DockStyle.Top
-            };
-            sideNavPanel.Controls.Add(navHeader);
 
             var navFlowPanel = new FlowLayoutPanel
             {
@@ -61,9 +48,9 @@ namespace TEST
                 Height = 220
             };
 
-            BtnNavDashboard = CreateNavButton("📊 Dashboard", 0);
-            BtnNavMyMeals = CreateNavButton("🍽️ My Meals", 1);
-            BtnNavDailyLog = CreateNavButton("📅 Daily Log", 2);
+            BtnNavDashboard = CreateNavButton("Dashboard", 0);
+            BtnNavMyMeals = CreateNavButton("My Meals", 1);
+            BtnNavDailyLog = CreateNavButton("Daily Log", 2);
 
             navFlowPanel.Controls.Add(BtnNavDashboard);
             navFlowPanel.Controls.Add(BtnNavMyMeals);
@@ -183,7 +170,7 @@ namespace TEST
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.White,
-                Padding = new Padding(15)
+                Padding = new Padding(15),
             };
 
             // =============== RIGHT PANEL - GEMINI CHAT ===============
@@ -288,7 +275,7 @@ namespace TEST
             Controls.Add(mainTableLayout);
             Controls.Add(StatusStrip);
             ClientSize = new Size(1600, 700);
-            Text = "Edadmam - Meal Planner";
+            Text = "Edamam - Meal Planner";
             Font = new Font("Segoe UI", 9F);
             BackColor = Color.FromArgb(245, 245, 245);
             Load += Form1_Load;
@@ -336,11 +323,11 @@ namespace TEST
                 Font = new Font("Segoe UI", 9, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Width = 130,
+                Width = 120,
                 Height = 50,
-                Margin = new Padding(0, 0, 0, 5),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(12, 0, 0, 0)
+                Margin = new Padding(0, 10, 0, 0),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(0, 0, 3, 0)
             };
             btn.FlatAppearance.BorderSize = 0;
             btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(50, 50, 50);

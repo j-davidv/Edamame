@@ -2,10 +2,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Google.GenAI;
 using Google.GenAI.Types;
-using TEST.Domain.Entities;
-using TEST.Domain.Interfaces;
+using Edamam.Domain.Entities;
+using Edamam.Domain.Interfaces;
 
-namespace TEST.Infrastructure.ExternalServices;
+namespace Edamam.Infrastructure.ExternalServices;
 
 /// <summary>
 /// Implements INutritionAnalysisService using Gemini 2.5 Flash API.

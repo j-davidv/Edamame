@@ -1,6 +1,6 @@
-using TEST.Domain.Entities;
+using Edamam.Domain.Entities;
 
-namespace TEST.Domain.Interfaces;
+namespace Edamam.Domain.Interfaces;
 
 /// <summary>
 /// Abstraction for nutrition analysis service (Dependency Inversion).

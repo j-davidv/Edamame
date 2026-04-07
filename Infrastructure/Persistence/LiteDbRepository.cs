@@ -1,7 +1,7 @@
 using LiteDB;
-using TEST.Domain.Interfaces;
+using Edamam.Domain.Interfaces;
 
-namespace TEST.Infrastructure.Persistence;
+namespace Edamam.Infrastructure.Persistence;
 
 /// <summary>
 /// Generic repository implementation for LiteDB with thread-safe operations.

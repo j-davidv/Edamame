@@ -1,7 +1,7 @@
-using TEST.Domain.Entities;
-using TEST.Domain.Interfaces;
+using Edamam.Domain.Entities;
+using Edamam.Domain.Interfaces;
 
-namespace TEST.Application.Services;
+namespace Edamam.Application.Services;
 
 /// <summary>
 /// Provides use-case orchestration for meal operations.

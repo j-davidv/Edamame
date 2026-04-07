@@ -1,4 +1,4 @@
-namespace TEST.Domain.Entities;
+namespace Edamam.Domain.Entities;
 
 /// <summary>
 /// Base class for nutritional information (Inheritance principle).

@@ -1,6 +1,6 @@
 using LiteDB;
 
-namespace TEST.Domain.Entities;
+namespace Edamam.Domain.Entities;
 
 /// <summary>
 /// Represents a single ingredient in a recipe.

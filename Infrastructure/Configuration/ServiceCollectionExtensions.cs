@@ -1,12 +1,12 @@
 using LiteDB;
 using Microsoft.Extensions.DependencyInjection;
-using TEST.Application.Services;
-using TEST.Domain.Entities;
-using TEST.Domain.Interfaces;
-using TEST.Infrastructure.ExternalServices;
-using TEST.Infrastructure.Persistence;
+using Edamam.Application.Services;
+using Edamam.Domain.Entities;
+using Edamam.Domain.Interfaces;
+using Edamam.Infrastructure.ExternalServices;
+using Edamam.Infrastructure.Persistence;
 
-namespace TEST.Infrastructure.Configuration;
+namespace Edamam.Infrastructure.Configuration;
 
 /// <summary>
 /// Dependency Injection configuration following SOLID principles.

@@ -1,8 +1,8 @@
 using Google.GenAI;
 using Google.GenAI.Types;
-using TEST.Domain.Interfaces;
+using Edamam.Domain.Interfaces;
 
-namespace TEST.Infrastructure.ExternalServices;
+namespace Edamam.Infrastructure.ExternalServices;
 
 /// <summary>
 /// Implements IGeminiChatService using Gemini 2.5 Flash API.

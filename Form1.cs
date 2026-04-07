@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
-using TEST.Application.Services;
-using TEST.Domain.Entities;
-using TEST.Domain.Interfaces;
+using Edamam.Application.Services;
+using Edamam.Domain.Entities;
+using Edamam.Domain.Interfaces;
 using System.Text;
 
-namespace TEST
+namespace Edamam
 {
     public partial class Form1 : Form
     {
@@ -188,7 +188,7 @@ namespace TEST
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 RowHeadersVisible = false,
                 Font = new Font("Segoe UI", 10),
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             };
 
             mealsGrid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
@@ -808,203 +808,6 @@ namespace TEST
             _currentContentPanel.Controls.Add(titleLabel);
         }
 
-        private Panel CreateStatCard(string title, string value, string unit, Color bgColor)
-        {
-            var card = new Panel
-            {
-                Width = 160,
-                Height = 110,
-                BackColor = bgColor,
-                Margin = new Padding(0, 0, 15, 0),
-                Padding = new Padding(15),
-                BorderStyle = BorderStyle.None
-            };
-
-            var titleLabel = new Label
-            {
-                Text = title,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = Color.White,
-                AutoSize = true,
-                Margin = new Padding(0, 0, 0, 8)
-            };
-
-            var valueLabel = new Label
-            {
-                Text = value,
-                Font = new Font("Segoe UI", 24, FontStyle.Bold),
-                ForeColor = Color.White,
-                AutoSize = true,
-                Margin = new Padding(0, 5, 0, 5)
-            };
-
-            var unitLabel = new Label
-            {
-                Text = unit,
-                Font = new Font("Segoe UI", 9),
-                ForeColor = Color.White,
-                AutoSize = true
-            };
-
-            card.Controls.Add(unitLabel);
-            card.Controls.Add(valueLabel);
-            card.Controls.Add(titleLabel);
-
-            return card;
-        }
-
-        private void ShowRecipeLibraryPanel()
-        {
-            ClearContentPanel();
-            _currentContentPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(20), AutoScroll = true };
-            ContentPanel.Controls.Add(_currentContentPanel);
-
-            var titleLabel = new Label
-            {
-                Text = "Recipe Library & Macro Breakdown",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 33, 33),
-                AutoSize = true,
-                Margin = new Padding(0, 0, 0, 20),
-                Dock = DockStyle.Top
-            };
-
-            var flowPanel = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                FlowDirection = FlowDirection.TopDown,
-                AutoSize = true,
-                WrapContents = false
-            };
-
-            foreach (var meal in _allMeals.Take(6))
-            {
-                var mealPanel = new Panel
-                {
-                    Width = 500,
-                    AutoSize = true,
-                    BackColor = Color.FromArgb(250, 250, 250),
-                    BorderStyle = BorderStyle.FixedSingle,
-                    Margin = new Padding(0, 0, 0, 15),
-                    Padding = new Padding(15)
-                };
-
-                var mealLabel = new Label
-                {
-                    Text = $"🍽️ {meal.Name}",
-                    Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                    ForeColor = Color.FromArgb(33, 33, 33),
-                    AutoSize = true,
-                    Margin = new Padding(0, 0, 0, 10),
-                    Dock = DockStyle.Top
-                };
-                mealPanel.Controls.Add(mealLabel);
-
-                if (meal.Nutritionals != null)
-                {
-                    var protein = meal.Nutritionals.Protein;
-                    var carbs = meal.Nutritionals.Carbohydrates;
-                    var fat = meal.Nutritionals.Fat;
-                    var total = protein + carbs + fat;
-
-                    var proteinPercent = total > 0 ? (protein / total * 100) : 0;
-                    var carbsPercent = total > 0 ? (carbs / total * 100) : 0;
-                    var fatPercent = total > 0 ? (fat / total * 100) : 0;
-
-                    // Macro bars
-                    var macroBarPanel = new Panel
-                    {
-                        Width = 470,
-                        Height = 80,
-                        Dock = DockStyle.Top,
-                        Margin = new Padding(0, 10, 0, 10),
-                        BackColor = Color.Transparent
-                    };
-
-                    // Protein bar
-                    var proteinBar = new Panel
-                    {
-                        Width = (int)(470 * (proteinPercent / 100)),
-                        Height = 20,
-                        BackColor = Color.FromArgb(76, 175, 80),
-                        Margin = new Padding(0, 0, 0, 5)
-                    };
-
-                    var proteinBarLabel = new Label
-                    {
-                        Text = $"Protein: {protein:F1}g ({proteinPercent:F0}%)",
-                        Font = new Font("Segoe UI", 9),
-                        ForeColor = Color.FromArgb(60, 60, 60),
-                        AutoSize = true,
-                        Margin = new Padding(0, 5, 0, 5),
-                        Dock = DockStyle.Top
-                    };
-
-                    macroBarPanel.Controls.Add(proteinBar);
-
-                    // Carbs bar
-                    var carbsBar = new Panel
-                    {
-                        Width = (int)(470 * (carbsPercent / 100)),
-                        Height = 20,
-                        BackColor = Color.FromArgb(33, 150, 243),
-                        Margin = new Padding(0, 0, 0, 5)
-                    };
-
-                    var carbsBarLabel = new Label
-                    {
-                        Text = $"Carbs: {carbs:F1}g ({carbsPercent:F0}%)",
-                        Font = new Font("Segoe UI", 9),
-                        ForeColor = Color.FromArgb(60, 60, 60),
-                        AutoSize = true,
-                        Margin = new Padding(0, 5, 0, 5),
-                        Dock = DockStyle.Top
-                    };
-
-                    macroBarPanel.Controls.Add(carbsBar);
-
-                    // Fat bar
-                    var fatBar = new Panel
-                    {
-                        Width = (int)(470 * (fatPercent / 100)),
-                        Height = 20,
-                        BackColor = Color.FromArgb(255, 152, 0),
-                        Margin = new Padding(0, 0, 0, 5)
-                    };
-
-                    var fatBarLabel = new Label
-                    {
-                        Text = $"Fat: {fat:F1}g ({fatPercent:F0}%)",
-                        Font = new Font("Segoe UI", 9),
-                        ForeColor = Color.FromArgb(60, 60, 60),
-                        AutoSize = true,
-                        Margin = new Padding(0, 5, 0, 0),
-                        Dock = DockStyle.Top
-                    };
-
-                    macroBarPanel.Controls.Add(fatBar);
-                    mealPanel.Controls.Add(macroBarPanel);
-
-                    // Nutrition summary
-                    var summaryLabel = new Label
-                    {
-                        Text = $"Total: {meal.Nutritionals.Calories:F0} kcal",
-                        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                        ForeColor = Color.FromArgb(76, 175, 80),
-                        AutoSize = true,
-                        Margin = new Padding(0, 10, 0, 0),
-                        Dock = DockStyle.Top
-                    };
-                    mealPanel.Controls.Add(summaryLabel);
-                }
-
-                flowPanel.Controls.Add(mealPanel);
-            }
-
-            _currentContentPanel.Controls.Add(flowPanel);
-            _currentContentPanel.Controls.Add(titleLabel);
-        }
-
         private void ClearContentPanel()
         {
             ContentPanel.Controls.Clear();
@@ -1061,7 +864,7 @@ namespace TEST
 
                 if (ingredients.Count == 0)
                 {
-                    ShowError("Input Error", "Please enter at least one ingredient in the format: quantity unit ingredient\nExample: 200 gram chicken breast");
+                    ShowError("Input Error", "Please enter at least one ingredient, for example: 1 kilogram chicken cut ups");
                     return;
                 }
 
@@ -1081,7 +884,7 @@ namespace TEST
                     Recipes = recipes
                 };
 
-                UpdateStatus("Analyzing meal nutrition with Gemini...");
+                UpdateStatus("Analyzing meal nutrition...");
                 var created = await _mealService.CreateAndAnalyzeMealAsync(meal);
 
                 UpdateStatus($"✓ Meal '{mealName}' created with {created.Nutritionals?.Calories.ToString("F0") ?? "0"} calories");
@@ -1132,7 +935,7 @@ namespace TEST
                 TextBoxChatHistory.ScrollToCaret();
                 TextBoxChatInput.Clear();
 
-                UpdateStatus("Analyzing with Gemini AI...");
+                UpdateStatus("Analyzing...");
 
                 var response = await _chatService.ChatAsync(userMessage);
 

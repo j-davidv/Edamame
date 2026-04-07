@@ -2,11 +2,11 @@
 // This file demonstrates how to use the Meal Tracker architecture
 
 using Microsoft.Extensions.DependencyInjection;
-using TEST.Application.Services;
-using TEST.Domain.Entities;
-using TEST.Infrastructure.Configuration;
+using Edamam.Application.Services;
+using Edamam.Domain.Entities;
+using Edamam.Infrastructure.Configuration;
 
-namespace TEST.Examples;
+namespace Edamam.Examples;
 
 /// <summary>
 /// Usage examples for the Meal Tracker application.

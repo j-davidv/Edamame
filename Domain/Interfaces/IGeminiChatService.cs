@@ -1,4 +1,4 @@
-namespace TEST.Domain.Interfaces;
+namespace Edamam.Domain.Interfaces;
 
 /// <summary>
 /// Abstraction for Gemini chat service.

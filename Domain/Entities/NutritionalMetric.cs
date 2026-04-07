@@ -1,4 +1,4 @@
-namespace TEST.Domain.Entities;
+namespace Edamam.Domain.Entities;
 
 /// <summary>
 /// Represents nutritional metrics for a meal or recipe.

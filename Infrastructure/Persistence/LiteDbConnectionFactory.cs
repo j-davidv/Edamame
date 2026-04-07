@@ -1,6 +1,6 @@
 using LiteDB;
 
-namespace TEST.Infrastructure.Persistence;
+namespace Edamam.Infrastructure.Persistence;
 
 /// <summary>
 /// Factory for creating and managing LiteDB connections with thread-safety.
@@ -50,15 +50,15 @@ public class LiteDbConnectionFactory
     private void ConfigureBsonMapper(ILiteDatabase database)
     {
         var mapper = BsonMapper.Global;
-        
+
         // Configure nested collection handling
-        mapper.Entity<TEST.Domain.Entities.Meal>()
-            .Id(x => x.Id);
-        
-        mapper.Entity<TEST.Domain.Entities.Recipe>()
+        mapper.Entity<Edamam.Domain.Entities.Meal>()
             .Id(x => x.Id);
 
-        mapper.Entity<TEST.Domain.Entities.NutritionalMetric>();
+        mapper.Entity<Edamam.Domain.Entities.Recipe>()
+            .Id(x => x.Id);
+
+        mapper.Entity<Edamam.Domain.Entities.NutritionalMetric>();
     }
 
     /// <summary>

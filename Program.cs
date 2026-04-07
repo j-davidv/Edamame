@@ -3,9 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
-using TEST.Infrastructure.Configuration;
+using Edamam.Infrastructure.Configuration;
 
-namespace TEST
+namespace Edamam
 {
     internal static class Program
     {
@@ -30,10 +30,6 @@ namespace TEST
             services.AddMealTrackerServices(geminiApiKey);
 
             var serviceProvider = services.BuildServiceProvider();
-
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
 
             // Create and run the main form with DI container
             var form = new Form1(serviceProvider);
