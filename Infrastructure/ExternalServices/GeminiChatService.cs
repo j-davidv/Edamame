@@ -71,34 +71,51 @@ You are friendly, supportive, and encouraging. Keep responses concise but inform
                 }
             }
 
-            var response = await _geminiClient.Models.GenerateContentAsync(
-                model: MODEL_NAME,
-                contents: promptBuilder.ToString()
-            );
-
-            if (response?.Candidates == null || response.Candidates.Count == 0)
+            // retry with exponential backoff for transient errors (high demand / rate limits)
+            dynamic response = null;
+            int maxAttempts = 4;
+            int delayMs = 800;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                throw new InvalidOperationException("Gemini API returned no candidates in response.");
+                try
+                {
+                    response = await _geminiClient.Models.GenerateContentAsync(
+                        model: MODEL_NAME,
+                        contents: promptBuilder.ToString()
+                    );
+
+                    if (response?.Candidates == null || response.Candidates.Count == 0)
+                    {
+                        throw new InvalidOperationException("Gemini API returned no candidates in response.");
+                    }
+
+                    var candidate = response.Candidates[0];
+                    if (candidate?.Content?.Parts == null || candidate.Content.Parts.Count == 0)
+                    {
+                        throw new InvalidOperationException("Gemini API returned no content parts in response.");
+                    }
+
+                    var responseText = candidate.Content.Parts[0].Text;
+                    if (string.IsNullOrWhiteSpace(responseText))
+                    {
+                        throw new InvalidOperationException("Gemini API returned empty response text.");
+                    }
+
+                    // success
+                    System.Diagnostics.Debug.WriteLine($"Gemini Chat Response: {responseText}");
+                    _conversationHistory.Add(("assistant", responseText));
+                    return responseText;
+                }
+                catch (Exception ex) when (IsTransient(ex) && attempt < maxAttempts)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Gemini chat transient error (attempt {attempt}): {ex.Message}");
+                    await Task.Delay(delayMs + (new Random()).Next(0, 200));
+                    delayMs *= 2;
+                    continue;
+                }
             }
 
-            var candidate = response.Candidates[0];
-            if (candidate?.Content?.Parts == null || candidate.Content.Parts.Count == 0)
-            {
-                throw new InvalidOperationException("Gemini API returned no content parts in response.");
-            }
-
-            var responseText = candidate.Content.Parts[0].Text;
-            if (string.IsNullOrWhiteSpace(responseText))
-            {
-                throw new InvalidOperationException("Gemini API returned empty response text.");
-            }
-
-            System.Diagnostics.Debug.WriteLine($"Gemini Chat Response: {responseText}");
-
-            // Add assistant response to history
-            _conversationHistory.Add(("assistant", responseText));
-
-            return responseText;
+            throw new InvalidOperationException("Gemini Chat API failed after retries.");
         }
         catch (Exception ex)
         {
@@ -112,5 +129,14 @@ You are friendly, supportive, and encouraging. Keep responses concise but inform
     {
         _conversationHistory.Clear();
         await Task.CompletedTask;
+    }
+
+    private static bool IsTransient(Exception ex)
+    {
+        if (ex is System.Net.Http.HttpRequestException) return true;
+        var msg = ex.Message?.ToLowerInvariant() ?? string.Empty;
+        if (msg.Contains("high demand") || msg.Contains("rate limit") || msg.Contains("429") || msg.Contains("503") || msg.Contains("timeout"))
+            return true;
+        return false;
     }
 }

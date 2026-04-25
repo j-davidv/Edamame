@@ -21,20 +21,44 @@ namespace Edamam
                 Dock = DockStyle.Fill,
                 ColumnCount = 4,
                 RowCount = 1,
-                BackColor = Color.FromArgb(245, 245, 245),
-                Padding = new Padding(0)
+                BackColor = Color.FromArgb(243, 244, 246), // Light cool gray #F3F4F6
+                Padding = new Padding(12)
             };
-            mainTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));  // Side Navigation
+            mainTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));  // BMI Calculator
             mainTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 360));  // Input Form
-            mainTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));   // Main Content
+            mainTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));   // Main Content (Dashboard)
             mainTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300));  // Chat
 
             // SIDE NAVIGATION PANEL 
             var sideNavPanel = new Panel
             {
                 Dock = DockStyle.Fill,
-                BackColor = Color.White,
-                Padding = new Padding(15, 20, 15, 20)
+                BackColor = Color.FromArgb(243, 244, 246), // Match main background
+                Padding = new Padding(0),
+                Margin = new Padding(0, 0, 6, 0),
+                AutoScroll = true
+            };
+
+            // Navigation Card
+            var sideNavCardPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                BackColor = Color.FromArgb(31, 71, 55), // Dark forest green background
+                Padding = new Padding(15, 20, 15, 20),
+                Height = 280
+            };
+
+            // Add card styling with rounded corners and subtle shadow
+            sideNavCardPanel.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(20, 50, 40), 1))
+                using (var brush = new SolidBrush(Color.FromArgb(31, 71, 55)))
+                {
+                    var rect = new Rectangle(0, 0, sideNavCardPanel.Width - 1, sideNavCardPanel.Height - 1);
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.FillRoundedRectangle(brush, 0, 0, sideNavCardPanel.Width, sideNavCardPanel.Height, 8);
+                    e.Graphics.DrawRoundedRectangle(pen, 0, 0, sideNavCardPanel.Width - 1, sideNavCardPanel.Height - 1, 8);
+                }
             };
 
             var navFlowPanel = new FlowLayoutPanel
@@ -48,26 +72,180 @@ namespace Edamam
                 Height = 220
             };
 
-            BtnNavDashboard = CreateNavButton("Dashboard", 0);
-            BtnNavMyMeals = CreateNavButton("My Meals", 1);
-            BtnNavDailyLog = CreateNavButton("Daily Log", 2);
+            BtnNavDashboard = CreateNavButton("📊 Dashboard", 0);
+            BtnNavMyMeals = CreateNavButton("🍽️  My Meals", 1);
+            BtnNavDailyLog = CreateNavButton("📅 Daily Log", 2);
 
             navFlowPanel.Controls.Add(BtnNavDashboard);
             navFlowPanel.Controls.Add(BtnNavMyMeals);
             navFlowPanel.Controls.Add(BtnNavDailyLog);
 
-            sideNavPanel.Controls.Add(navFlowPanel);
+            sideNavCardPanel.Controls.Add(navFlowPanel);
+            sideNavPanel.Controls.Add(sideNavCardPanel);
+
+            // BMI CALCULATOR CARD
+            var bmiCardPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                BackColor = Color.White,
+                Padding = new Padding(15),
+                Height = 280,
+                Margin = new Padding(0, 12, 0, 0)
+            };
+
+            // Add card styling
+            bmiCardPanel.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(229, 231, 235), 1))
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.FillRoundedRectangle(brush, 0, 0, bmiCardPanel.Width, bmiCardPanel.Height, 8);
+                    e.Graphics.DrawRoundedRectangle(pen, 0, 0, bmiCardPanel.Width - 1, bmiCardPanel.Height - 1, 8);
+                }
+            };
+
+            var bmiTitleLabel = new Label
+            {
+                Text = "BMI Calculator",
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                ForeColor = Color.FromArgb(31, 71, 55),
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 15),
+                Dock = DockStyle.Top
+            };
+
+            var heightLabel = new Label
+            {
+                Text = "Height (cm):",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.FromArgb(80, 80, 80),
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 8),
+                Dock = DockStyle.Top
+            };
+
+            TxtBmiHeight = new TextBox
+            {
+                Font = new Font("Segoe UI", 11),
+                BackColor = Color.FromArgb(250, 250, 250),
+                ForeColor = Color.FromArgb(33, 33, 33),
+                BorderStyle = BorderStyle.FixedSingle,
+                Height = 32,
+                Dock = DockStyle.Top,
+                Margin = new Padding(0, 0, 0, 12),
+                PlaceholderText = "e.g., 175"
+            };
+            TxtBmiHeight.TextChanged += (s, e) => CalculateBMI();
+
+            var weightLabel = new Label
+            {
+                Text = "Weight (kg):",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.FromArgb(80, 80, 80),
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 8),
+                Dock = DockStyle.Top
+            };
+
+            TxtBmiWeight = new TextBox
+            {
+                Font = new Font("Segoe UI", 11),
+                BackColor = Color.FromArgb(250, 250, 250),
+                ForeColor = Color.FromArgb(33, 33, 33),
+                BorderStyle = BorderStyle.FixedSingle,
+                Height = 32,
+                Dock = DockStyle.Top,
+                Margin = new Padding(0, 0, 0, 12),
+                PlaceholderText = "e.g., 70"
+            };
+            TxtBmiWeight.TextChanged += (s, e) => CalculateBMI();
+
+            var bmiResultLabel = new Label
+            {
+                Text = "BMI Result:",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.FromArgb(80, 80, 80),
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 8),
+                Dock = DockStyle.Top
+            };
+
+            LblBmiResult = new Label
+            {
+                Text = "BMI: -",
+                Font = new Font("Segoe UI", 22, FontStyle.Bold),
+                ForeColor = Color.FromArgb(52, 168, 83),
+                AutoSize = true,
+                Margin = new Padding(0, 10, 0, 0),
+                Dock = DockStyle.Top
+            };
+
+            var bmiCategoryLabel = new Label
+            {
+                Text = "Category: -",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                AutoSize = true,
+                Margin = new Padding(0, 5, 0, 0),
+                Dock = DockStyle.Top
+            };
+            LblBmiCategory = bmiCategoryLabel;
+
+            bmiCardPanel.Controls.Add(LblBmiResult);
+            bmiCardPanel.Controls.Add(bmiCategoryLabel);
+            bmiCardPanel.Controls.Add(bmiResultLabel);
+            bmiCardPanel.Controls.Add(TxtBmiWeight);
+            bmiCardPanel.Controls.Add(weightLabel);
+            bmiCardPanel.Controls.Add(TxtBmiHeight);
+            bmiCardPanel.Controls.Add(heightLabel);
+            bmiCardPanel.Controls.Add(bmiTitleLabel);
+
+            // Combine BMI and navigation into first column panel
+            var firstColumnPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(243, 244, 246),
+                Padding = new Padding(0),
+                Margin = new Padding(0, 0, 6, 0),
+                AutoScroll = true
+            };
+
+            firstColumnPanel.Controls.Add(bmiCardPanel);
+            firstColumnPanel.Controls.Add(sideNavCardPanel);
 
             // LEFT PANEL - INPUT FORM
             var inputTableLayout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 10,
+                RowCount = 11,
                 AutoSize = false,
                 BackColor = Color.White,
-                Padding = new Padding(15)
+                Padding = new Padding(15),
+                Margin = new Padding(6, 0, 6, 0)
             };
+
+            // Add card styling with rounded corners and subtle shadow
+            var inputCardPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(243, 244, 246),
+                Padding = new Padding(0)
+            };
+
+            inputCardPanel.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(229, 231, 235), 1))
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    var rect = new Rectangle(0, 0, inputCardPanel.Width - 1, inputCardPanel.Height - 1);
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.FillRoundedRectangle(brush, 0, 0, inputCardPanel.Width, inputCardPanel.Height, 8);
+                    e.Graphics.DrawRoundedRectangle(pen, 0, 0, inputCardPanel.Width - 1, inputCardPanel.Height - 1, 8);
+                }
+            };
+            inputCardPanel.Controls.Add(inputTableLayout);
             inputTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             inputTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Header
             inputTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Meal Name Label
@@ -79,6 +257,7 @@ namespace Edamam
             inputTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Recipes Label
             inputTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Recipes Input
             inputTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Button
+            inputTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Clear Button
 
             InputPanel = inputTableLayout;
 
@@ -86,7 +265,7 @@ namespace Edamam
             {
                 Text = "Add Meal",
                 Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 33, 33),
+                ForeColor = Color.FromArgb(79, 121, 111), // Soft sage green
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 15),
                 Dock = DockStyle.Top
@@ -106,6 +285,12 @@ namespace Edamam
                 PlaceholderText = "Enter meal name..."
             };
 
+            // Add rounded corner effect and hover styling
+            TextBoxMealName.MouseEnter += (s, e) => TextBoxMealName.BackColor = Color.FromArgb(242, 247, 245);
+            TextBoxMealName.MouseLeave += (s, e) => TextBoxMealName.BackColor = Color.FromArgb(250, 250, 250);
+            TextBoxMealName.GotFocus += (s, e) => TextBoxMealName.BackColor = Color.FromArgb(240, 248, 246);
+            TextBoxMealName.LostFocus += (s, e) => TextBoxMealName.BackColor = Color.FromArgb(250, 250, 250);
+
             // Meal Type
             var lblMealType = CreateLabel("Meal Type");
             ComboBoxMealType = new ComboBox
@@ -118,6 +303,13 @@ namespace Edamam
                 Height = 28,
                 Dock = DockStyle.Top
             };
+
+            // Add hover styling
+            ComboBoxMealType.MouseEnter += (s, e) => ComboBoxMealType.BackColor = Color.FromArgb(242, 247, 245);
+            ComboBoxMealType.MouseLeave += (s, e) => ComboBoxMealType.BackColor = Color.FromArgb(250, 250, 250);
+            ComboBoxMealType.GotFocus += (s, e) => ComboBoxMealType.BackColor = Color.FromArgb(240, 248, 246);
+            ComboBoxMealType.LostFocus += (s, e) => ComboBoxMealType.BackColor = Color.FromArgb(250, 250, 250);
+
             ComboBoxMealType.Items.AddRange(new[] { "Breakfast", "Brunch", "Lunch", "Snack", "Dinner", "Supper" });
             ComboBoxMealType.SelectedIndex = 0;
 
@@ -135,8 +327,33 @@ namespace Edamam
                 Dock = DockStyle.Top
             };
 
-            // Recipes/Ingredients
-            var lblRecipes = CreateLabel("Recipes & Ingredients");
+            DateTimePickerMeal.MouseEnter += (s, e) => DateTimePickerMeal.BackColor = Color.FromArgb(242, 247, 245);
+            DateTimePickerMeal.MouseLeave += (s, e) => DateTimePickerMeal.BackColor = Color.FromArgb(250, 250, 250);
+            DateTimePickerMeal.GotFocus += (s, e) => DateTimePickerMeal.BackColor = Color.FromArgb(240, 248, 246);
+            DateTimePickerMeal.LostFocus += (s, e) => DateTimePickerMeal.BackColor = Color.FromArgb(250, 250, 250);
+
+            // Recipes/Ingredients - with clear visual section and better proportions
+            var recipesLabelPanel = new Panel
+            {
+                Height = 32,
+                Dock = DockStyle.Top,
+                BackColor = Color.FromArgb(240, 248, 246),
+                Padding = new Padding(10, 4, 10, 4),
+                Margin = new Padding(0, 12, 0, 8),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            var lblRecipes = new Label
+            {
+                Text = "📝 Recipes & Ingredients",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = Color.FromArgb(31, 71, 55),
+                AutoSize = true,
+                Dock = DockStyle.Left,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            recipesLabelPanel.Controls.Add(lblRecipes);
+
             TextBoxRecipes = new TextBox
             {
                 Font = new Font("Segoe UI", 9),
@@ -145,14 +362,41 @@ namespace Edamam
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 Margin = new Padding(0, 0, 0, 10),
-                Dock = DockStyle.Fill,
-                PlaceholderText = "List recipes and ingredients (one per line)..."
+                Height = 140,
+                Dock = DockStyle.Top,
+                PlaceholderText = "List recipes and ingredients (one per line)...",
+                BorderStyle = BorderStyle.FixedSingle,
+                Padding = new Padding(8, 6, 8, 6)
             };
+
+            TextBoxRecipes.MouseEnter += (s, e) => TextBoxRecipes.BackColor = Color.FromArgb(242, 247, 245);
+            TextBoxRecipes.MouseLeave += (s, e) => TextBoxRecipes.BackColor = Color.FromArgb(250, 250, 250);
+            TextBoxRecipes.GotFocus += (s, e) => TextBoxRecipes.BackColor = Color.FromArgb(240, 248, 246);
+            TextBoxRecipes.LostFocus += (s, e) => TextBoxRecipes.BackColor = Color.FromArgb(250, 250, 250);
 
             // Button
             BtnCreateMeal = CreateBlackButton("Create Meal");
             BtnCreateMeal.Dock = DockStyle.Top;
-            BtnCreateMeal.Height = 32;
+            BtnCreateMeal.Height = 36;
+            BtnCreateMeal.Margin = new Padding(0, 10, 0, 0);
+
+            BtnClearForm = new Button
+            {
+                Text = "Clear Form",
+                BackColor = Color.FromArgb(200, 200, 200),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                Height = 36,
+                Margin = new Padding(0, 5, 0, 0),
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Top
+            };
+            BtnClearForm.FlatAppearance.BorderSize = 0;
+            BtnClearForm.FlatAppearance.MouseOverBackColor = Color.FromArgb(180, 180, 180);
+            BtnClearForm.FlatAppearance.MouseDownBackColor = Color.FromArgb(160, 160, 160);
 
             inputTableLayout.Controls.Add(headerLabel, 0, 0);
             inputTableLayout.Controls.Add(lblMealName, 0, 1);
@@ -161,104 +405,280 @@ namespace Edamam
             inputTableLayout.Controls.Add(ComboBoxMealType, 0, 4);
             inputTableLayout.Controls.Add(lblMealDate, 0, 5);
             inputTableLayout.Controls.Add(DateTimePickerMeal, 0, 6);
-            inputTableLayout.Controls.Add(lblRecipes, 0, 7);
+            inputTableLayout.Controls.Add(recipesLabelPanel, 0, 7);
             inputTableLayout.Controls.Add(TextBoxRecipes, 0, 8);
             inputTableLayout.Controls.Add(BtnCreateMeal, 0, 9);
+            inputTableLayout.Controls.Add(BtnClearForm, 0, 10);
 
             // CENTER PANEL - MAIN CONTENT
             ContentPanel = new Panel
             {
                 Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(243, 244, 246), // Light cool gray
+                Padding = new Padding(0),
+                Margin = new Padding(6, 0, 6, 0)
+            };
+
+            var contentCardPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(243, 244, 246),
+                Padding = new Padding(0)
+            };
+
+            contentCardPanel.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(229, 231, 235), 1))
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    var rect = new Rectangle(0, 0, contentCardPanel.Width - 1, contentCardPanel.Height - 1);
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.FillRoundedRectangle(brush, 0, 0, contentCardPanel.Width, contentCardPanel.Height, 8);
+                    e.Graphics.DrawRoundedRectangle(pen, 0, 0, contentCardPanel.Width - 1, contentCardPanel.Height - 1, 8);
+                }
+            };
+
+            var contentTableLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 2,
                 BackColor = Color.White,
                 Padding = new Padding(15),
+                AutoSize = false
             };
+            contentTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            contentTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            contentTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Header (Dashboard + Button)
+            contentTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Content (visualizations)
+
+            var dashboardHeaderLabel = new Label
+            {
+                Text = "Dashboard",
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                ForeColor = Color.FromArgb(79, 121, 111), // Soft sage green
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 15)
+            };
+
+            BtnDailyCalorieIntake = new Button
+            {
+                Text = "Daily Calorie Intake",
+                BackColor = Color.FromArgb(52, 168, 83), // Vibrant green
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                Height = 32,
+                Margin = new Padding(10, 0, 0, 15),
+                AutoSize = true
+            };
+            BtnDailyCalorieIntake.FlatAppearance.BorderSize = 0;
+            BtnDailyCalorieIntake.FlatAppearance.MouseOverBackColor = Color.FromArgb(45, 145, 71);
+            BtnDailyCalorieIntake.FlatAppearance.MouseDownBackColor = Color.FromArgb(38, 122, 60);
+            BtnDailyCalorieIntake.Click += (s, e) => ShowCalorieGoalDialog();
+
+            var contentInnerPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.White,
+                Padding = new Padding(0),
+                Margin = new Padding(0, 0, 0, 0)
+            };
+
+            ContentInnerPanel = contentInnerPanel;
+
+            contentTableLayout.Controls.Add(dashboardHeaderLabel, 0, 0);
+            contentTableLayout.Controls.Add(BtnDailyCalorieIntake, 1, 0);
+            contentTableLayout.Controls.Add(contentInnerPanel, 0, 1);
+            contentTableLayout.SetColumnSpan(contentInnerPanel, 2);
+
+            contentCardPanel.Controls.Add(contentTableLayout);
+            ContentPanel.Controls.Add(contentCardPanel);
 
             // RIGHT PANEL - GEMINI CHAT
             var chatTableLayout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 4,
+                RowCount = 3,
                 BackColor = Color.White,
                 Padding = new Padding(15),
-                AutoSize = false
+                AutoSize = false,
+                Margin = new Padding(6, 0, 0, 0)
             };
             chatTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             chatTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Header
             chatTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Chat history
-            chatTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Input
-            chatTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Buttons
+            chatTableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Input area
 
             var chatHeaderLabel = new Label
             {
                 Text = "AI Nutrition Coach",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 33, 33),
+                ForeColor = Color.FromArgb(31, 71, 55), // Dark forest green
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 10)
             };
 
             TextBoxChatHistory = new RichTextBox
             {
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = Color.FromArgb(245, 246, 248), // Light gray background
                 ForeColor = Color.FromArgb(33, 33, 33),
                 Font = new Font("Segoe UI", 9),
                 ReadOnly = true,
-                BorderStyle = BorderStyle.FixedSingle,
+                BorderStyle = BorderStyle.None,
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0, 0, 0, 10),
-                WordWrap = true
+                WordWrap = true,
+                Padding = new Padding(10)
             };
 
             TextBoxChatInput = new TextBox
             {
                 Font = new Font("Segoe UI", 9),
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = Color.White,
                 ForeColor = Color.FromArgb(33, 33, 33),
-                BorderStyle = BorderStyle.FixedSingle,
-                Height = 60,
+                BorderStyle = BorderStyle.None,
+                Height = 70,
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
-                Margin = new Padding(0, 0, 0, 10),
-                Dock = DockStyle.Top,
+                Margin = new Padding(0),
+                Dock = DockStyle.Fill,
                 PlaceholderText = "Ask about nutrition..."
             };
 
-            var chatButtonsPanel = new FlowLayoutPanel
+            // Add hover effect to input
+            TextBoxChatInput.MouseEnter += (s, e) => TextBoxChatInput.BackColor = Color.FromArgb(248, 248, 250);
+            TextBoxChatInput.MouseLeave += (s, e) => TextBoxChatInput.BackColor = Color.White;
+            TextBoxChatInput.GotFocus += (s, e) => TextBoxChatInput.BackColor = Color.FromArgb(248, 248, 250);
+            TextBoxChatInput.LostFocus += (s, e) => TextBoxChatInput.BackColor = Color.White;
+
+            var chatInputPanel = new Panel
             {
-                AutoSize = true,
-                Margin = new Padding(0),
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false,
-                Dock = DockStyle.Top
+                Dock = DockStyle.Top,
+                Height = 110,
+                BackColor = Color.FromArgb(243, 244, 246),
+                Padding = new Padding(10)
             };
 
-            BtnSendMessage = CreateBlackButton("Send");
-            BtnSendMessage.Width = 80;
-            BtnSendMessage.Margin = new Padding(0, 0, 5, 0);
-            BtnClearChat = CreateBlackButton("Clear");
-            BtnClearChat.Width = 70;
+            // Pill-shaped border effect
+            chatInputPanel.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.FillRoundedRectangle(brush, 0, 0, chatInputPanel.Width, chatInputPanel.Height, 22);
+                    e.Graphics.DrawRoundedRectangle(pen, 0, 0, chatInputPanel.Width - 1, chatInputPanel.Height - 1, 22);
+                }
+            };
 
-            chatButtonsPanel.Controls.Add(BtnSendMessage);
-            chatButtonsPanel.Controls.Add(BtnClearChat);
+            // Use TableLayoutPanel for better layout control
+            var inputLayoutPanel = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0),
+                AutoSize = false
+            };
+            inputLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            inputLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            inputLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            // Create container for textbox with internal padding and rounded corners
+            var textBoxContainer = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.White,
+                Padding = new Padding(0),
+                Margin = new Padding(0, 0, 8, 0)
+            };
+            textBoxContainer.Controls.Add(TextBoxChatInput);
+
+            // Add rounded corners to textbox container
+            textBoxContainer.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(220, 220, 220), 1))
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.FillRoundedRectangle(brush, 0, 0, textBoxContainer.Width, textBoxContainer.Height, 12);
+                    e.Graphics.DrawRoundedRectangle(pen, 0, 0, textBoxContainer.Width - 1, textBoxContainer.Height - 1, 12);
+                }
+            };
+
+            inputLayoutPanel.Controls.Add(textBoxContainer, 0, 0);
+
+            BtnSendMessage = new Button
+            {
+                Text = "➤",
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                BackColor = Color.FromArgb(52, 168, 83), // Vibrant green
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Width = 44,
+                Height = 44,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(0),
+                AutoSize = false
+            };
+            BtnSendMessage.FlatAppearance.BorderSize = 0;
+            BtnSendMessage.FlatAppearance.MouseOverBackColor = Color.FromArgb(45, 145, 71);
+            BtnSendMessage.FlatAppearance.MouseDownBackColor = Color.FromArgb(38, 122, 60);
+
+            // Style button with rounded corners
+            BtnSendMessage.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var path = new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    path.AddEllipse(0, 0, BtnSendMessage.Width - 1, BtnSendMessage.Height - 1);
+                    BtnSendMessage.Region = new Region(path);
+                }
+            };
+
+            inputLayoutPanel.Controls.Add(BtnSendMessage, 1, 0);
+            chatInputPanel.Controls.Add(inputLayoutPanel);
 
             chatTableLayout.Controls.Add(chatHeaderLabel, 0, 0);
             chatTableLayout.Controls.Add(TextBoxChatHistory, 0, 1);
-            chatTableLayout.Controls.Add(TextBoxChatInput, 0, 2);
-            chatTableLayout.Controls.Add(chatButtonsPanel, 0, 3);
+            chatTableLayout.Controls.Add(chatInputPanel, 0, 2);
 
-            ChatPanel = chatTableLayout;
+            var chatCardPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(243, 244, 246),
+                Padding = new Padding(0)
+            };
 
-            // add panels to main layout
-            mainTableLayout.Controls.Add(sideNavPanel, 0, 0);
-            mainTableLayout.Controls.Add(InputPanel, 1, 0);
+            chatCardPanel.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(229, 231, 235), 1))
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    var rect = new Rectangle(0, 0, chatCardPanel.Width - 1, chatCardPanel.Height - 1);
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.FillRoundedRectangle(brush, 0, 0, chatCardPanel.Width, chatCardPanel.Height, 8);
+                    e.Graphics.DrawRoundedRectangle(pen, 0, 0, chatCardPanel.Width - 1, chatCardPanel.Height - 1, 8);
+                }
+            };
+            chatCardPanel.Controls.Add(chatTableLayout);
+
+            ChatPanel = chatCardPanel;
+
+            // add panels to main table layout (inner 4-column layout)
+            mainTableLayout.Controls.Add(firstColumnPanel, 0, 0);
+            mainTableLayout.Controls.Add(inputCardPanel, 1, 0);
             mainTableLayout.Controls.Add(ContentPanel, 2, 0);
-            mainTableLayout.Controls.Add(ChatPanel, 3, 0);
+            mainTableLayout.Controls.Add(chatCardPanel, 3, 0);
 
             // status bar
             StatusStrip = new StatusStrip
             {
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = Color.FromArgb(243, 244, 246), // Light cool gray
                 ForeColor = Color.FromArgb(80, 80, 80),
                 Font = new Font("Segoe UI", 9)
             };
@@ -277,7 +697,7 @@ namespace Edamam
             ClientSize = new Size(1600, 700);
             Text = "Edamam - Meal Planner";
             Font = new Font("Segoe UI", 9F);
-            BackColor = Color.FromArgb(245, 245, 245);
+            BackColor = Color.FromArgb(243, 244, 246); // Light cool gray #F3F4F6
             Load += Form1_Load;
         }
 
@@ -298,18 +718,19 @@ namespace Edamam
             var btn = new Button
             {
                 Text = text,
-                BackColor = Color.Black,
+                BackColor = Color.FromArgb(52, 168, 83), // Vibrant green
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Height = 32,
+                Height = 36,
                 Margin = new Padding(0),
-                AutoSize = true
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter
             };
             btn.FlatAppearance.BorderSize = 0;
-            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(50, 50, 50);
-            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(100, 100, 100);
+            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(45, 145, 71); // Darker green
+            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(38, 122, 60); // Even darker green
             return btn;
         }
 
@@ -318,39 +739,49 @@ namespace Edamam
             var btn = new Button
             {
                 Text = text,
-                BackColor = Color.Black,
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                BackColor = Color.FromArgb(31, 71, 55), // Dark forest green
+                ForeColor = Color.FromArgb(200, 220, 210), // Light text
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Width = 120,
+                Width = 140,
                 Height = 50,
-                Margin = new Padding(0, 10, 0, 0),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Padding = new Padding(0, 0, 3, 0)
+                Margin = new Padding(0, 8, 0, 0),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(12, 0, 0, 0)
             };
             btn.FlatAppearance.BorderSize = 0;
-            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(50, 50, 50);
-            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(100, 100, 100);
+            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(44, 92, 74); // Lighter forest green on hover
+            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(52, 100, 82);
+
+            // Add a tag to track if this is the active button
+            btn.Tag = false;
+
             return btn;
         }
 
         // designer Controls
         public Panel InputPanel;
         public Panel ContentPanel;
+        public Panel ContentInnerPanel;
         public Panel ChatPanel;
         public TextBox TextBoxMealName;
         public ComboBox ComboBoxMealType;
         public DateTimePicker DateTimePickerMeal;
         public TextBox TextBoxRecipes;
         public Button BtnCreateMeal;
+        public Button BtnClearForm;
         public Button BtnNavDashboard;
         public Button BtnNavMyMeals;
         public Button BtnNavDailyLog;
         public RichTextBox TextBoxChatHistory;
         public TextBox TextBoxChatInput;
         public Button BtnSendMessage;
-        public Button BtnClearChat;
+        public TextBox TxtBmiHeight;
+        public TextBox TxtBmiWeight;
+        public Label LblBmiResult;
+        public Label LblBmiCategory;
+        public Button BtnDailyCalorieIntake;
         public StatusStrip StatusStrip;
         public ToolStripStatusLabel StatusLabel;
     }
