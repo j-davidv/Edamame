@@ -713,8 +713,9 @@ namespace Edamam
                     }
                     else if (e.ColumnIndex == 7) // Delete
                     {
-                        var result = MessageBox.Show($"Are you sure you want to delete '{meal.Name}'?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                        if (result == DialogResult.Yes)
+                        using var confirm = new DeleteConfirmationForm("Are you sure you want to delete this meal?");
+                        var dr = confirm.ShowDialog(this);
+                        if (dr == DialogResult.OK)
                         {
                             try
                             {
@@ -1456,17 +1457,57 @@ namespace Edamam
 
                 UpdateStatus("Analyzing...");
 
-                var response = await _chatService.ChatAsync(userMessage);
+                bool IsTransient(Exception ex)
+                {
+                    if (ex is System.Net.Http.HttpRequestException) return true;
+                    var m = ex.Message?.ToLowerInvariant() ?? string.Empty;
+                    return m.Contains("high demand") || m.Contains("rate limit") || m.Contains("429") || m.Contains("503") || m.Contains("timeout");
+                }
+
+                string? response = null;
+                int maxAttempts = 3;
+                int delayMs = 800;
+
+                for (int attempt = 1; attempt <= maxAttempts; attempt++)
+                {
+                    try
+                    {
+                        response = await _chatService.ChatAsync(userMessage);
+                        break;
+                    }
+                    catch (Exception ex) when (IsTransient(ex) && attempt < maxAttempts)
+                    {
+                        UpdateStatus($"Transient chat error, retrying ({attempt}/{maxAttempts})...");
+                        await Task.Delay(delayMs + (new Random()).Next(0, 200));
+                        delayMs *= 2;
+                        continue;
+                    }
+                }
+
+                if (response == null)
+                {
+                    // final attempt to surface an error or response
+                    response = await _chatService.ChatAsync(userMessage);
+                }
 
                 // Add AI response as a chat bubble
-                AppendChatBubble(response, isUser: false);
+                AppendChatBubble(response ?? "", isUser: false);
 
                 UpdateStatus("✓ Response received");
             }
             catch (Exception ex)
             {
-                ShowError("Chat Error", ex.Message);
-                UpdateStatus($"✗ Error: {ex.Message}");
+                // show friendly message for transient service issues
+                var msg = ex.Message ?? "An error occurred while calling the chat service.";
+                if (msg.ToLowerInvariant().Contains("high demand") || msg.ToLowerInvariant().Contains("rate limit") || msg.ToLowerInvariant().Contains("503"))
+                {
+                    ShowError("Chat Error", "Chat service is temporarily overloaded. Please try again in a few minutes.");
+                }
+                else
+                {
+                    ShowError("Chat Error", msg);
+                }
+                UpdateStatus($"✗ Error: {msg}");
             }
             finally
             {

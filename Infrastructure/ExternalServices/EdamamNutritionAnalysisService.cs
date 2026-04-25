@@ -4,15 +4,17 @@ using Google.GenAI;
 using Google.GenAI.Types;
 using Edamam.Domain.Entities;
 using Edamam.Domain.Interfaces;
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Edamam.Infrastructure.ExternalServices;
-
-// implements INutritionAnalysisService using Gemini 2.5 Flash API
 
 public class GeminiNutritionAnalysisService : INutritionAnalysisService
 {
     private readonly Client _geminiClient;
     private const string MODEL_NAME = "gemini-2.5-flash";
+    private readonly ConcurrentDictionary<string, GeminiNutritionData> _nutritionCache = new();
 
     public GeminiNutritionAnalysisService(string apiKey)
     {
@@ -22,19 +24,15 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
         _geminiClient = new Client(apiKey: apiKey);
     }
 
-
-    // analyzes a meal using Gemini API
     public async Task<NutritionalMetric> AnalyzeMealAsync(Meal meal)
     {
         if (meal == null) throw new ArgumentNullException(nameof(meal));
 
-        // defensive check
         if (meal.Recipes == null)
         {
             meal.Recipes = new List<Recipe>();
         }
 
-        // combine all ingredients from recipes
         var allIngredients = meal.Recipes
             .Where(r => r != null && r.Ingredients != null)
             .SelectMany(r => r.Ingredients)
@@ -79,8 +77,6 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
             throw new InvalidOperationException($"Error analyzing meal: {ex.Message}", ex);
         }
     }
-
-    // analyzes a recipe
 
     public async Task<NutritionalMetric> AnalyzeRecipeAsync(Recipe recipe)
     {
@@ -137,7 +133,6 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
             return "No nutritional data available. Analyze the meal first.";
         }
 
-        // Analyze nutritional composition and provide advice
         var advice = new List<string>();
 
         if (meal.Nutritionals.Calories > 2500)
@@ -162,13 +157,56 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
         return string.Join(" ", advice);
     }
 
-
-    //strict JSON schema
     private async Task<GeminiNutritionData> CallGeminiApiAsync(List<string> ingredients)
     {
         try
         {
-            var ingredientsList = string.Join("\n", ingredients);
+            // ----- FIX 1: canonicalize ingredient lines (parse qty/unit/name) -----
+            var normalizedIngredients = ingredients
+                .Where(i => !string.IsNullOrWhiteSpace(i))
+                .Select(i =>
+                {
+                    var s = i.Trim();
+                    var m = Regex.Match(s, @"^\s*(\d+(?:[.,]\d+)?)?\s*([^\s\d]+)?\s*(.*)$");
+                    if (m.Success)
+                    {
+                        var qtyGroup = m.Groups[1].Value;
+                        var unitGroup = (m.Groups[2].Value ?? string.Empty).Trim().ToLowerInvariant();
+                        var nameGroup = (m.Groups[3].Value ?? string.Empty).Trim().ToLowerInvariant();
+                        double qty = 0;
+                        if (!string.IsNullOrEmpty(qtyGroup))
+                        {
+                            var qtyStr = qtyGroup.Replace(",", ".");
+                            double.TryParse(qtyStr, NumberStyles.Any, CultureInfo.InvariantCulture, out qty);
+                        }
+                        if (!string.IsNullOrEmpty(unitGroup))
+                        {
+                            if (unitGroup.StartsWith("kg")) { qty *= 1000; unitGroup = "g"; }
+                            else if (unitGroup.StartsWith("gram") || unitGroup == "g" || unitGroup.StartsWith("gr")) unitGroup = "g";
+                            else if (unitGroup.StartsWith("mg")) { qty /= 1000; unitGroup = "g"; }
+                        }
+                        else
+                        {
+                            unitGroup = "serving";
+                        }
+                        var qtyStrNormalized = qty > 0 ? qty.ToString("0.###", CultureInfo.InvariantCulture) : "1";
+                        var canonical = $"{qtyStrNormalized} {unitGroup} {nameGroup}".Trim();
+                        return Regex.Replace(canonical, @"\s+", " ");
+                    }
+                    return s.ToLowerInvariant();
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .OrderBy(x => x)
+                .ToList();
+
+            var cacheKey = string.Join("|", normalizedIngredients);
+
+            if (_nutritionCache.TryGetValue(cacheKey, out var cached))
+            {
+                return cached;
+            }
+
+            var ingredientsList = string.Join("\n", normalizedIngredients);
 
             var prompt = $@"Analyze the following ingredients and calculate their nutritional values per serving or per combined meal.
 Ingredients:
@@ -189,34 +227,48 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
 
             System.Diagnostics.Debug.WriteLine($"Gemini Request: {prompt}");
 
-            var response = await _geminiClient.Models.GenerateContentAsync(
-                model: MODEL_NAME,
-                contents: prompt
-            );
+            dynamic response = null;
+            int maxAttempts = 4;
+            int delayMs = 800;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    // ----- FIX 2: Temperature=0 for deterministic outputs -----
+                    response = await _geminiClient.Models.GenerateContentAsync(
+                        model: MODEL_NAME,
+                        contents: prompt,
+                        config: new GenerateContentConfig { Temperature = 0f }
+                    );
+                    break;
+                }
+                catch (Exception ex) when (IsTransient(ex) && attempt < maxAttempts)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Gemini transient error (attempt {attempt}): {ex.Message}");
+                    await Task.Delay(delayMs + (new Random()).Next(0, 200));
+                    delayMs *= 2;
+                    continue;
+                }
+            }
+
+            if (response == null)
+                throw new InvalidOperationException("Gemini API returned no response after retries.");
 
             if (response?.Candidates == null || response.Candidates.Count == 0)
-            {
                 throw new InvalidOperationException("Gemini API returned no candidates in response.");
-            }
 
             var candidate = response.Candidates[0];
             if (candidate?.Content?.Parts == null || candidate.Content.Parts.Count == 0)
-            {
                 throw new InvalidOperationException("Gemini API returned no content parts in response.");
-            }
 
             var responseText = candidate.Content.Parts[0].Text;
             if (string.IsNullOrWhiteSpace(responseText))
-            {
                 throw new InvalidOperationException("Gemini API returned empty response text.");
-            }
 
             System.Diagnostics.Debug.WriteLine($"Gemini Response: {responseText}");
 
-            // Clean the response
             var cleanedResponse = CleanJsonResponse(responseText);
 
-            // parse JSON response using System.Text.Json with case-insensitive matching
             using (var doc = JsonDocument.Parse(cleanedResponse))
             {
                 var root = doc.RootElement;
@@ -238,6 +290,15 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
                     throw new InvalidOperationException($"Gemini API response missing calorie data. Please check your ingredients are valid (e.g., '200 gram chicken breast').");
                 }
 
+                try
+                {
+                    _nutritionCache.TryAdd(cacheKey, nutritionData);
+                }
+                catch
+                {
+                    // ignore caching errors - not critical
+                }
+
                 return nutritionData;
             }
         }
@@ -251,15 +312,12 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         }
     }
 
-    // cleans JSON response by removing markdown code blocks if present
     private static string CleanJsonResponse(string response)
     {
         response = response.Trim();
 
-        // Remove markdown code blocks
         if (response.StartsWith("```"))
         {
-            // Remove opening ```json or ```
             var startIndex = response.IndexOf('\n');
             if (startIndex > 0)
             {
@@ -281,13 +339,11 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
 
     private static double ExtractNumericValue(JsonElement root, string propertyName)
     {
-        // Try exact match first
         if (root.TryGetProperty(propertyName, out var element))
         {
             return ExtractDouble(element);
         }
 
-        // Try case-insensitive match
         foreach (var property in root.EnumerateObject())
         {
             if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
@@ -297,6 +353,15 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         }
 
         return 0;
+    }
+
+    private static bool IsTransient(Exception ex)
+    {
+        if (ex is System.Net.Http.HttpRequestException) return true;
+        var msg = ex.Message?.ToLowerInvariant() ?? string.Empty;
+        if (msg.Contains("high demand") || msg.Contains("rate limit") || msg.Contains("429") || msg.Contains("503") || msg.Contains("timeout"))
+            return true;
+        return false;
     }
 
     private static double ExtractDouble(JsonElement element)
@@ -318,7 +383,6 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         }
         catch
         {
-           
         }
 
         return 0;
@@ -328,30 +392,23 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
     {
         var classifications = new List<string>();
 
-        // Protein-rich
         if (data.Protein > 30)
             classifications.Add("High Protein");
 
-        // Low calorie
         if (data.Calories < 400)
             classifications.Add("Low Calorie");
 
-        // Low fat
         if (data.Fat < 10)
             classifications.Add("Low Fat");
 
-        // High carb
         if (data.Carbohydrates > 40)
             classifications.Add("High Carb");
 
-        // Balanced
         if (classifications.Count == 0)
             classifications.Add("Balanced");
 
         return string.Join(", ", classifications);
     }
-
-    // Generates simple dietary advice based on nutritional profile
 
     private static string GenerateDietaryAdvice(GeminiNutritionData data)
     {
@@ -370,9 +427,6 @@ Ensure all values are numbers and non-negative. If a value cannot be determined,
         return "Well-balanced meal suitable for most dietary goals.";
     }
 }
-
-
-//Data structure for processed Gemini nutrition data
 
 internal class GeminiNutritionData
 {
