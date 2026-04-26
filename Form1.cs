@@ -16,6 +16,10 @@ namespace Edamam
         private Panel _currentContentPanel;
         private double _dailyCalorieGoal = 2000; // Default calorie goal
 
+        // filter properties
+        private string _currentFilterType = "Daily"; // Daily, Weekly, Monthly
+        private DateTime _selectedFilterDate = DateTime.Today;
+
         public Form1(IServiceProvider serviceProvider)
         {
             InitializeComponent();
@@ -95,15 +99,27 @@ namespace Edamam
             _currentContentPanel.Padding = new Padding(15);
             _currentContentPanel.AutoScroll = true;
 
-            // Calculate stats
-            var totalMeals = _allMeals.Count;
-            var totalCalories = _allMeals.Sum(m => m.Nutritionals?.Calories ?? 0);
-            var totalProtein = _allMeals.Sum(m => m.Nutritionals?.Protein ?? 0);
-            var totalCarbs = _allMeals.Sum(m => m.Nutritionals?.Carbohydrates ?? 0);
-            var totalFat = _allMeals.Sum(m => m.Nutritionals?.Fat ?? 0);
-            var totalSodium = _allMeals.Sum(m => m.Nutritionals?.Sodium ?? 0);
-            var totalSugar = _allMeals.Sum(m => m.Nutritionals?.Sugar ?? 0);
-            var totalSaturatedFat = _allMeals.Sum(m => m.Nutritionals?.SaturatedFat ?? 0);
+            // mainc container panel
+            var mainContainer = new Panel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true
+            };
+
+            // Add filter controls at the top
+            var filterPanel = CreateMacroFilterPanel();
+            mainContainer.Controls.Add(filterPanel);
+
+            // get filtered results
+            var filteredMeals = GetFilteredMeals();
+            var totalMeals = filteredMeals.Count;
+            var totalCalories = filteredMeals.Sum(m => m.Nutritionals?.Calories ?? 0);
+            var totalProtein = filteredMeals.Sum(m => m.Nutritionals?.Protein ?? 0);
+            var totalCarbs = filteredMeals.Sum(m => m.Nutritionals?.Carbohydrates ?? 0);
+            var totalFat = filteredMeals.Sum(m => m.Nutritionals?.Fat ?? 0);
+            var totalSodium = filteredMeals.Sum(m => m.Nutritionals?.Sodium ?? 0);
+            var totalSugar = filteredMeals.Sum(m => m.Nutritionals?.Sugar ?? 0);
+            var totalSaturatedFat = filteredMeals.Sum(m => m.Nutritionals?.SaturatedFat ?? 0);
 
             // Create main container with improved 3-column grid
             var mainStatsPanel = new TableLayoutPanel
@@ -113,7 +129,8 @@ namespace Edamam
                 RowCount = 3,
                 AutoSize = false,
                 CellBorderStyle = TableLayoutPanelCellBorderStyle.None,
-                Height = 700
+                Height = 700,
+                Margin = new Padding(0, 20, 0, 0)
             };
 
             // Set equal column widths (33% each)
@@ -150,7 +167,218 @@ namespace Edamam
             mainStatsPanel.Controls.Add(fatCard, 1, 2);
             mainStatsPanel.Controls.Add(sodiumCard, 2, 2);
 
-            _currentContentPanel.Controls.Add(mainStatsPanel);
+            mainContainer.Controls.Add(mainStatsPanel);
+            _currentContentPanel.Controls.Add(mainContainer);
+        }
+
+        /// macro filters
+        private Panel CreateMacroFilterPanel()
+        {
+            var filterPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 80,
+                BackColor = Color.FromArgb(250, 250, 250),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            var label = new Label
+            {
+                Text = "Filter Macros By:",
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                ForeColor = Color.FromArgb(33, 33, 33),
+                Location = new Point(15, 12),
+                AutoSize = true
+            };
+
+            // buttons
+            var radioDailyPanel = new Panel { Location = new Point(150, 10), Size = new Size(130, 25) };
+            var radioDailyBtn = new RadioButton
+            {
+                Text = "Daily",
+                Checked = _currentFilterType == "Daily",
+                Font = new Font("Segoe UI", 10),
+                Dock = DockStyle.Fill
+            };
+            radioDailyBtn.CheckedChanged += (s, e) =>
+            {
+                if (radioDailyBtn.Checked)
+                {
+                    _currentFilterType = "Daily";
+                    _selectedFilterDate = DateTime.Today;
+                    ShowDashboardPanel();
+                }
+            };
+            radioDailyPanel.Controls.Add(radioDailyBtn);
+
+            var radioWeeklyPanel = new Panel { Location = new Point(280, 10), Size = new Size(130, 25) };
+            var radioWeeklyBtn = new RadioButton
+            {
+                Text = "Weekly",
+                Checked = _currentFilterType == "Weekly",
+                Font = new Font("Segoe UI", 10),
+                Dock = DockStyle.Fill
+            };
+            radioWeeklyBtn.CheckedChanged += (s, e) =>
+            {
+                if (radioWeeklyBtn.Checked)
+                {
+                    _currentFilterType = "Weekly";
+                    ShowDashboardPanel();
+                }
+            };
+            radioWeeklyPanel.Controls.Add(radioWeeklyBtn);
+
+            var radioMonthlyPanel = new Panel { Location = new Point(410, 10), Size = new Size(130, 25) };
+            var radioMonthlyBtn = new RadioButton
+            {
+                Text = "Monthly",
+                Checked = _currentFilterType == "Monthly",
+                Font = new Font("Segoe UI", 10),
+                Dock = DockStyle.Fill
+            };
+            radioMonthlyBtn.CheckedChanged += (s, e) =>
+            {
+                if (radioMonthlyBtn.Checked)
+                {
+                    _currentFilterType = "Monthly";
+                    ShowDashboardPanel();
+                }
+            };
+            radioMonthlyPanel.Controls.Add(radioMonthlyBtn);
+
+            // date nav
+            var dateLabel = new Label
+            {
+                Text = "Date:",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = Color.FromArgb(66, 66, 66),
+                Location = new Point(15, 45),
+                AutoSize = true
+            };
+
+            var datePickerControl = new DateTimePicker
+            {
+                Value = _selectedFilterDate,
+                Format = DateTimePickerFormat.Short,
+                Font = new Font("Segoe UI", 10),
+                Location = new Point(60, 43),
+                Width = 120
+            };
+            datePickerControl.ValueChanged += (s, e) =>
+            {
+                _selectedFilterDate = datePickerControl.Value;
+                ShowDashboardPanel();
+            };
+
+            // prev/next buttons
+            var btnPrevious = new Button
+            {
+                Text = "← Previous",
+                Font = new Font("Segoe UI", 9),
+                BackColor = Color.FromArgb(230, 230, 230),
+                ForeColor = Color.FromArgb(33, 33, 33),
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(190, 43),
+                Width = 80,
+                Height = 28
+            };
+            btnPrevious.FlatAppearance.BorderSize = 1;
+            btnPrevious.Click += (s, e) =>
+            {
+                if (_currentFilterType == "Daily")
+                    _selectedFilterDate = _selectedFilterDate.AddDays(-1);
+                else if (_currentFilterType == "Weekly")
+                    _selectedFilterDate = _selectedFilterDate.AddDays(-7);
+                else
+                    _selectedFilterDate = _selectedFilterDate.AddMonths(-1);
+
+                datePickerControl.Value = _selectedFilterDate;
+                ShowDashboardPanel();
+            };
+
+            var btnNext = new Button
+            {
+                Text = "Next →",
+                Font = new Font("Segoe UI", 9),
+                BackColor = Color.FromArgb(230, 230, 230),
+                ForeColor = Color.FromArgb(33, 33, 33),
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(275, 43),
+                Width = 80,
+                Height = 28
+            };
+            btnNext.FlatAppearance.BorderSize = 1;
+            btnNext.Click += (s, e) =>
+            {
+                if (_currentFilterType == "Daily")
+                    _selectedFilterDate = _selectedFilterDate.AddDays(1);
+                else if (_currentFilterType == "Weekly")
+                    _selectedFilterDate = _selectedFilterDate.AddDays(7);
+                else
+                    _selectedFilterDate = _selectedFilterDate.AddMonths(1);
+
+                datePickerControl.Value = _selectedFilterDate;
+                ShowDashboardPanel();
+            };
+
+            var btnToday = new Button
+            {
+                Text = "Today",
+                Font = new Font("Segoe UI", 9),
+                BackColor = Color.FromArgb(52, 168, 83),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(360, 43),
+                Width = 70,
+                Height = 28
+            };
+            btnToday.FlatAppearance.BorderSize = 0;
+            btnToday.Click += (s, e) =>
+            {
+                _selectedFilterDate = DateTime.Today;
+                datePickerControl.Value = _selectedFilterDate;
+                ShowDashboardPanel();
+            };
+
+            filterPanel.Controls.Add(label);
+            filterPanel.Controls.Add(radioDailyPanel);
+            filterPanel.Controls.Add(radioWeeklyPanel);
+            filterPanel.Controls.Add(radioMonthlyPanel);
+            filterPanel.Controls.Add(dateLabel);
+            filterPanel.Controls.Add(datePickerControl);
+            filterPanel.Controls.Add(btnPrevious);
+            filterPanel.Controls.Add(btnNext);
+            filterPanel.Controls.Add(btnToday);
+
+            return filterPanel;
+        }
+
+        /// filters
+        private List<Meal> GetFilteredMeals()
+        {
+            List<Meal> filteredMeals = new();
+
+            if (_currentFilterType == "Daily")
+            {
+                var targetDate = _selectedFilterDate.Date;
+                filteredMeals = _allMeals.Where(m => m.MealDate.Date == targetDate).ToList();
+            }
+            else if (_currentFilterType == "Weekly")
+            {
+                // Get Monday of the selected week
+                var monday = _selectedFilterDate.AddDays(-(int)_selectedFilterDate.DayOfWeek + 1);
+                var sunday = monday.AddDays(6);
+                filteredMeals = _allMeals.Where(m => m.MealDate.Date >= monday.Date && m.MealDate.Date <= sunday.Date).ToList();
+            }
+            else if (_currentFilterType == "Monthly")
+            {
+                var firstDay = new DateTime(_selectedFilterDate.Year, _selectedFilterDate.Month, 1);
+                var lastDay = firstDay.AddMonths(1).AddDays(-1);
+                filteredMeals = _allMeals.Where(m => m.MealDate.Date >= firstDay.Date && m.MealDate.Date <= lastDay.Date).ToList();
+            }
+
+            return filteredMeals;
         }
 
         private enum StatCardSize

@@ -381,7 +381,7 @@ namespace Edamam
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 Margin = new Padding(0, 0, 0, 10),
-                Height = 140,
+                Height = 340,
                 Dock = DockStyle.Top,
                 PlaceholderText = "List recipes and ingredients (one per line)...",
                 BorderStyle = BorderStyle.FixedSingle,
