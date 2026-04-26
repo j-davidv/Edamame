@@ -1,40 +1,32 @@
-using Microsoft.Extensions.DependencyInjection;
-using Edamam.Application.Services;
+using Edamam.Presentation.Controllers;
+using Edamam.Presentation.Models;
 using Edamam.Domain.Entities;
 using Edamam.Domain.Interfaces;
-using System.Text;
 
 namespace Edamam
 {
     public partial class Form1 : Form
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly MealService _mealService;
-        private readonly IDailyMealAggregator _dailyAggregator;
-        private readonly IGeminiChatService? _chatService;
-        private List<Meal> _allMeals = new();
+        private readonly FormController _controller;
         private Panel _currentContentPanel;
-        private double _dailyCalorieGoal = 2000; // Default calorie goal
+        private double _dailyCalorieGoal = 2000;
 
         // filter properties
-        private string _currentFilterType = "Daily"; // Daily, Weekly, Monthly
+        private string _currentFilterType = "Daily";
         private DateTime _selectedFilterDate = DateTime.Today;
 
-        public Form1(IServiceProvider serviceProvider)
+        public Form1(FormController controller)
         {
             InitializeComponent();
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _mealService = _serviceProvider.GetRequiredService<MealService>();
-            _dailyAggregator = _serviceProvider.GetRequiredService<IDailyMealAggregator>();
-            _chatService = _serviceProvider.GetService<IGeminiChatService>();
+            _controller = controller ?? throw new ArgumentNullException(nameof(controller));
             _currentContentPanel = null!;
-
         }
 
         private async void Form1_Load(object sender, EventArgs e)
         {
             try
             {
+                // UI event handlers
                 BtnCreateMeal.Click += BtnCreateMeal_Click;
                 BtnClearForm.Click += BtnClearForm_Click;
                 BtnNavDashboard.Click += BtnNavDashboard_Click;
@@ -44,8 +36,8 @@ namespace Edamam
                 BtnSendMessage.Click += BtnSendMessage_Click;
                 TextBoxChatInput.KeyDown += TextBoxChatInput_KeyDown;
 
-                // Load saved calorie goal
-                LoadCalorieGoal();
+                // load saved calorie goal from controller
+                _dailyCalorieGoal = _controller.LoadDailyCalorieGoal();
 
                 // Add welcome message to chat
                 AppendChatBubble("👋 Hi! I'm your AI Nutrition Coach.\n\n" +
@@ -56,19 +48,22 @@ namespace Edamam
                     "• Health tips\n\n" +
                     "Let's make your meals healthier!", isUser: false);
 
-                // disables chat if service is not available
-                if (_chatService == null)
+                // Check chat availability through controller
+                if (!_controller.IsChatAvailable)
                 {
                     BtnSendMessage.Enabled = false;
                     TextBoxChatInput.Enabled = false;
-                    AppendChatBubble("⚠️ Gemini Chat Service not available.\nPlease ensure GOOGLE_API_KEY is set.", isUser: false);
+                    AppendChatBubble(_controller.GetChatUnavailableMessage(), isUser: false);
                 }
 
-                // load initial data
-                await RefreshMealsAsync();
+                // initialize controller and load meals
+                await _controller.InitializeAsync();
+                UpdateMealLists();
 
                 SetActiveNavButton(BtnNavDashboard);
                 ShowDashboardPanel();
+
+                UpdateStatus($"Loaded {_controller.GetAllMeals().Count} meals");
             }
             catch (Exception ex)
             {
@@ -76,20 +71,12 @@ namespace Edamam
             }
         }
 
-        private async Task RefreshMealsAsync()
+        /// get updated meal lists from controller
+        private void UpdateMealLists()
         {
-            try
-            {
-                // get all meals
-                var mealRepository = _serviceProvider.GetRequiredService<IRepository<Meal>>();
-                var allMeals = await mealRepository.GetAllAsync();
-                _allMeals = allMeals.ToList();
-                UpdateStatus($"Loaded {_allMeals.Count} meals");
-            }
-            catch (Exception ex)
-            {
-                ShowError("Error Loading Meals", ex.Message);
-            }
+            var filteredMeals = _controller.GetFilteredMeals();
+            UpdateMealList(filteredMeals);
+            UpdateDashboard();
         }
 
         private void ShowDashboardPanel()
