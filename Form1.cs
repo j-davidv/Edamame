@@ -24,6 +24,7 @@ namespace Edamam
             _dailyAggregator = _serviceProvider.GetRequiredService<IDailyMealAggregator>();
             _chatService = _serviceProvider.GetService<IGeminiChatService>();
             _currentContentPanel = null!;
+
         }
 
         private async void Form1_Load(object sender, EventArgs e)
@@ -35,6 +36,7 @@ namespace Edamam
                 BtnNavDashboard.Click += BtnNavDashboard_Click;
                 BtnNavMyMeals.Click += BtnNavMyMeals_Click;
                 BtnNavDailyLog.Click += BtnNavDailyLog_Click;
+                BtnNavBmi.Click += BtnNavBmi_Click;
                 BtnSendMessage.Click += BtnSendMessage_Click;
                 TextBoxChatInput.KeyDown += TextBoxChatInput_KeyDown;
 
@@ -334,7 +336,7 @@ namespace Edamam
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.White,
-                Margin = new Padding(8)
+                Margin = new Padding(15)
             };
 
             // Add rounded corners and border effect
@@ -452,7 +454,7 @@ namespace Edamam
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.White,
-                Margin = new Padding(8)
+                Margin = new Padding(15)
             };
 
             // Add rounded corners and border
@@ -479,11 +481,11 @@ namespace Edamam
             // Title
             var titleLabel = new Label
             {
-                Text = "📊 Macronutrient Breakdown",
+                Text = "Macronutrient Breakdown",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = Color.FromArgb(31, 71, 55),
                 AutoSize = true,
-                Margin = new Padding(15, 15, 15, 12),
+                Margin = new Padding(15, 15, 0, 12),
                 Dock = DockStyle.Top
             };
             card.Controls.Add(titleLabel);
@@ -558,17 +560,17 @@ namespace Edamam
             };
 
             // Carbs
-            var carbsLegend = CreateMacroLegendItem("🥗 Carbs", $"{carbs:F1}g", Color.FromArgb(255, 152, 0), carbsPercent);
+            var carbsLegend = CreateMacroLegendItem("     Carbs", $"{carbs:F1}g", Color.FromArgb(255, 152, 0), carbsPercent);
             carbsLegend.Margin = new Padding(0, 0, 15, 5);
             legendPanel.Controls.Add(carbsLegend);
 
             // Fat
-            var fatLegend = CreateMacroLegendItem("🧈 Fat", $"{fat:F1}g", Color.FromArgb(156, 39, 176), fatPercent);
+            var fatLegend = CreateMacroLegendItem("     Fat", $"{fat:F1}g", Color.FromArgb(156, 39, 176), fatPercent);
             fatLegend.Margin = new Padding(0, 0, 15, 5);
             legendPanel.Controls.Add(fatLegend);
 
             // Protein
-            var proteinLegend = CreateMacroLegendItem("🍗 Protein", $"{protein:F1}g", Color.FromArgb(51, 150, 243), proteinPercent);
+            var proteinLegend = CreateMacroLegendItem("     Protein", $"{protein:F1}g", Color.FromArgb(51, 150, 243), proteinPercent);
             proteinLegend.Margin = new Padding(0, 0, 0, 5);
             legendPanel.Controls.Add(proteinLegend);
 
@@ -1311,6 +1313,29 @@ namespace Edamam
             ShowDailyLogPanel(); 
         }
 
+        private void BtnNavBmi_Click(object? sender, EventArgs e)
+        {
+            SetActiveNavButton(BtnNavBmi);
+            ShowBmiCalculatorPanel();
+        }
+
+        private void ShowBmiCalculatorPanel()
+        {
+            ContentInnerPanel.Controls.Clear();
+            _currentContentPanel = ContentInnerPanel;
+            _currentContentPanel.Padding = new Padding(15);
+            _currentContentPanel.AutoScroll = true;
+
+            if (BmiCardPanel.Parent != null)
+            {
+                BmiCardPanel.Parent.Controls.Remove(BmiCardPanel);
+            }
+
+            BmiCardPanel.Dock = DockStyle.Top;
+            BmiCardPanel.Margin = new Padding(0);
+            _currentContentPanel.Controls.Add(BmiCardPanel);
+        }
+
         private void SetActiveNavButton(Button activeButton)
         {
             // Reset all nav buttons to normal state
@@ -1322,6 +1347,9 @@ namespace Edamam
 
             BtnNavDailyLog.BackColor = Color.FromArgb(31, 71, 55);
             BtnNavDailyLog.ForeColor = Color.FromArgb(200, 220, 210);
+
+            BtnNavBmi.BackColor = Color.FromArgb(31, 71, 55);
+            BtnNavBmi.ForeColor = Color.FromArgb(200, 220, 210);
 
             // Highlight the active button with a lighter background and brighter text
             activeButton.BackColor = Color.FromArgb(52, 104, 86); // Lighter green for active state
@@ -1367,24 +1395,21 @@ namespace Edamam
                     var trimmedLine = line.Trim();
                     if (string.IsNullOrEmpty(trimmedLine)) continue;
 
-                    var parts = trimmedLine.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
-
-                    if (parts.Length >= 3 && decimal.TryParse(parts[0], out var quantity))
+                    var parsed = IngredientParser.Parse(trimmedLine);
+                    if (parsed != null)
                     {
-                        var unit = parts[1];
-                        var name = parts[2];
-                        ingredients.Add(new Ingredient { Quantity = quantity, Unit = unit, Name = name });
-                    }
-                    else if (parts.Length >= 2 && decimal.TryParse(parts[0], out var singleQty))
-                    {
-                        var name = string.Join(" ", parts.Skip(1));
-                        ingredients.Add(new Ingredient { Quantity = singleQty, Unit = "serving", Name = name });
+                        ingredients.Add(parsed);
                     }
                 }
 
                 if (ingredients.Count == 0)
                 {
-                    ShowError("Input Error", "Please enter at least one ingredient, for example: 1 kilogram chicken cut ups");
+                    ShowError("Input Error", "Please enter at least one ingredient. Examples:\n" +
+                        "• 1kg chicken breast\n" +
+                        "• chicken breast 1kg\n" +
+                        "• 2 cups flour\n" +
+                        "• 500ml milk\n" +
+                        "• 3 apples");
                     return;
                 }
 
