@@ -28,11 +28,6 @@ public class GeminiNutritionAnalysisService : INutritionAnalysisService
     {
         if (meal == null) throw new ArgumentNullException(nameof(meal));
 
-        if (meal.Recipes == null)
-        {
-            meal.Recipes = new List<Recipe>();
-        }
-
         var allIngredients = meal.Recipes
             .Where(r => r != null && r.Ingredients != null)
             .SelectMany(r => r.Ingredients)
