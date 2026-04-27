@@ -1,6 +1,6 @@
 namespace Edamam.Domain.Interfaces;
 
-/// abstraction for generic repository operations
+/// generic repository operations
 
 public interface IRepository<T>
 {
