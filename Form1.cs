@@ -1,13 +1,15 @@
-using Edamam.Presentation.Controllers;
+using Edamam.Presentation.Interfaces;
 using Edamam.Presentation.Models;
 using Edamam.Domain.Entities;
 using Edamam.Domain.Interfaces;
+using System.Text;
+using Edamam.Application.Interfaces;
 
 namespace Edamam
 {
     public partial class Form1 : Form
     {
-        private readonly FormController _controller;
+        private readonly IFormController _controller;
         private Panel _currentContentPanel;
         private double _dailyCalorieGoal = 2000;
 
@@ -15,7 +17,7 @@ namespace Edamam
         private string _currentFilterType = "Daily";
         private DateTime _selectedFilterDate = DateTime.Today;
 
-        public Form1(FormController controller)
+        public Form1(IFormController controller)
         {
             InitializeComponent();
             _controller = controller ?? throw new ArgumentNullException(nameof(controller));
@@ -77,6 +79,15 @@ namespace Edamam
             var filteredMeals = _controller.GetFilteredMeals();
             UpdateMealList(filteredMeals);
             UpdateDashboard();
+        }
+
+        /// update meal by filter
+        private void UpdateMealList(List<Meal> meals)
+        {
+        }
+        private void UpdateDashboard()
+        {
+            var dashboardData = _controller.GetDashboardData();
         }
 
         private void ShowDashboardPanel()
@@ -344,28 +355,17 @@ namespace Edamam
         /// filters
         private List<Meal> GetFilteredMeals()
         {
-            List<Meal> filteredMeals = new();
+            // Get filter type enum
+            var filterType = _currentFilterType switch
+            {
+                "Weekly" => MealFilterParameters.FilterType.Weekly,
+                "Monthly" => MealFilterParameters.FilterType.Monthly,
+                _ => MealFilterParameters.FilterType.Daily
+            };
 
-            if (_currentFilterType == "Daily")
-            {
-                var targetDate = _selectedFilterDate.Date;
-                filteredMeals = _allMeals.Where(m => m.MealDate.Date == targetDate).ToList();
-            }
-            else if (_currentFilterType == "Weekly")
-            {
-                // Get Monday of the selected week
-                var monday = _selectedFilterDate.AddDays(-(int)_selectedFilterDate.DayOfWeek + 1);
-                var sunday = monday.AddDays(6);
-                filteredMeals = _allMeals.Where(m => m.MealDate.Date >= monday.Date && m.MealDate.Date <= sunday.Date).ToList();
-            }
-            else if (_currentFilterType == "Monthly")
-            {
-                var firstDay = new DateTime(_selectedFilterDate.Year, _selectedFilterDate.Month, 1);
-                var lastDay = firstDay.AddMonths(1).AddDays(-1);
-                filteredMeals = _allMeals.Where(m => m.MealDate.Date >= firstDay.Date && m.MealDate.Date <= lastDay.Date).ToList();
-            }
-
-            return filteredMeals;
+            // Use controller to filter meals
+            _controller.SetFilterParameters(filterType, _selectedFilterDate);
+            return _controller.GetFilteredMeals();
         }
 
         private enum StatCardSize
@@ -900,7 +900,8 @@ namespace Edamam
             mealsGrid.Columns.Add(new DataGridViewLinkColumn { Name = "EditMeal", HeaderText = "Edit", Width = 50, Text = "Edit" });
             mealsGrid.Columns.Add(new DataGridViewLinkColumn { Name = "DeleteMeal", HeaderText = "Delete", Width = 60, Text = "Delete" });
 
-            foreach (var meal in _allMeals)
+            var allMeals = _controller.GetAllMeals();
+            foreach (var meal in allMeals)
             {
                 mealsGrid.Rows.Add(
                     meal.Name,
@@ -918,7 +919,7 @@ namespace Edamam
             {
                 if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
                 {
-                    var meal = _allMeals[e.RowIndex];
+                    var meal = allMeals[e.RowIndex];
 
                     if (e.ColumnIndex == 5) // View Recipe
                     {
@@ -936,9 +937,7 @@ namespace Edamam
                         {
                             try
                             {
-                                var mealRepository = _serviceProvider.GetRequiredService<IRepository<Meal>>();
-                                await mealRepository.DeleteAsync(meal.Id.ToString());
-                                await RefreshMealsAsync();
+                                await _controller.DeleteMealAsync(meal.Id.ToString());
                                 ShowMyMealsPanel();
                                 UpdateStatus($"✓ Meal '{meal.Name}' deleted successfully");
                             }
@@ -1228,50 +1227,7 @@ namespace Edamam
             {
                 try
                 {
-                    meal.Name = mealNameBox.Text;
-                    meal.Type = (MealType)mealTypeCombo.SelectedIndex;
-                    meal.MealDate = mealDatePicker.Value;
-
-                    // parse updated recipes from text
-                    var recipes = new List<Recipe>();
-                    var ingredients = new List<Ingredient>();
-
-                    var lines = recipesBox.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var line in lines)
-                    {
-                        var trimmedLine = line.Trim();
-                        if (string.IsNullOrEmpty(trimmedLine)) continue;
-
-                        var parts = trimmedLine.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
-
-                        if (parts.Length >= 3 && decimal.TryParse(parts[0], out var quantity))
-                        {
-                            var unit = parts[1];
-                            var name = parts[2];
-                            ingredients.Add(new Ingredient { Quantity = quantity, Unit = unit, Name = name });
-                        }
-                        else if (parts.Length >= 2 && decimal.TryParse(parts[0], out var singleQty))
-                        {
-                            var name = string.Join(" ", parts.Skip(1));
-                            ingredients.Add(new Ingredient { Quantity = singleQty, Unit = "serving", Name = name });
-                        }
-                    }
-
-                    if (ingredients.Count > 0)
-                    {
-                        var mainRecipe = new Recipe
-                        {
-                            Name = "Main Recipe",
-                            Ingredients = ingredients,
-                            CreatedDate = DateTime.UtcNow
-                        };
-                        recipes.Add(mainRecipe);
-                        meal.Recipes = recipes;
-                    }
-
-                    var mealRepository = _serviceProvider.GetRequiredService<IRepository<Meal>>();
-                    await mealRepository.UpdateAsync(meal.Id.ToString(), meal);
-                    await RefreshMealsAsync();
+                    await _controller.UpdateMealAsync(meal, mealNameBox.Text, (MealType)mealTypeCombo.SelectedIndex, mealDatePicker.Value, recipesBox.Text);
                     ShowMyMealsPanel();
                     UpdateStatus($"✓ Meal '{meal.Name}' updated successfully");
                 }
@@ -1327,7 +1283,8 @@ namespace Edamam
                 Dock = DockStyle.Top
             };
 
-            var mealsForToday = _allMeals.Where(m => m.MealDate.Date == DateTime.Today).ToList();
+            var allMeals = _controller.GetAllMeals();
+            var mealsForToday = allMeals.Where(m => m.MealDate.Date == DateTime.Today).ToList();
             var totalCaloriesToday = mealsForToday.Sum(m => m.Nutritionals?.Calories ?? 0);
             var totalProteinToday = mealsForToday.Sum(m => m.Nutritionals?.Protein ?? 0);
             var totalCarbsToday = mealsForToday.Sum(m => m.Nutritionals?.Carbohydrates ?? 0);
@@ -1601,58 +1558,15 @@ namespace Edamam
                     return;
                 }
 
-                var recipes = new List<Recipe>();
-                var ingredients = new List<Ingredient>();
-
-                var lines = recipesText.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var line in lines)
-                {
-                    var trimmedLine = line.Trim();
-                    if (string.IsNullOrEmpty(trimmedLine)) continue;
-
-                    var parsed = IngredientParser.Parse(trimmedLine);
-                    if (parsed != null)
-                    {
-                        ingredients.Add(parsed);
-                    }
-                }
-
-                if (ingredients.Count == 0)
-                {
-                    ShowError("Input Error", "Please enter at least one ingredient. Examples:\n" +
-                        "• 1kg chicken breast\n" +
-                        "• chicken breast 1kg\n" +
-                        "• 2 cups flour\n" +
-                        "• 500ml milk\n" +
-                        "• 3 apples");
-                    return;
-                }
-
-                var mainRecipe = new Recipe
-                {
-                    Name = "Main Recipe",
-                    Ingredients = ingredients,
-                    CreatedDate = DateTime.UtcNow
-                };
-                recipes.Insert(0, mainRecipe);
-
-                var meal = new Meal
-                {
-                    Name = mealName,
-                    Type = mealType,
-                    MealDate = mealDate,
-                    Recipes = recipes
-                };
-
                 UpdateStatus("Analyzing meal nutrition...");
-                var created = await _mealService.CreateAndAnalyzeMealAsync(meal);
+                var created = await _controller.CreateMealAsync(mealName, mealType, mealDate, recipesText);
 
                 UpdateStatus($"✓ Meal '{mealName}' created with {created.Nutritionals?.Calories.ToString("F0") ?? "0"} calories");
                 TextBoxMealName.Clear();
                 TextBoxRecipes.Clear();
                 ComboBoxMealType.SelectedIndex = 0;
 
-                await RefreshMealsAsync();
+                UpdateMealLists();
             }
             catch (Exception ex)
             {
@@ -1676,9 +1590,9 @@ namespace Edamam
 
         private async Task SendChatMessageAsync()
         {
-            if (_chatService == null)
+            if (!_controller.IsChatAvailable)
             {
-                ShowError("Chat Not Available", "Gemini Chat Service is not configured.");
+                ShowError("Chat Not Available", _controller.GetChatUnavailableMessage());
                 return;
             }
 
@@ -1697,13 +1611,6 @@ namespace Edamam
 
                 UpdateStatus("Analyzing...");
 
-                bool IsTransient(Exception ex)
-                {
-                    if (ex is System.Net.Http.HttpRequestException) return true;
-                    var m = ex.Message?.ToLowerInvariant() ?? string.Empty;
-                    return m.Contains("high demand") || m.Contains("rate limit") || m.Contains("429") || m.Contains("503") || m.Contains("timeout");
-                }
-
                 string? response = null;
                 int maxAttempts = 3;
                 int delayMs = 800;
@@ -1712,13 +1619,13 @@ namespace Edamam
                 {
                     try
                     {
-                        response = await _chatService.ChatAsync(userMessage);
+                        response = await _controller.SendChatMessageAsync(userMessage);
                         break;
                     }
-                    catch (Exception ex) when (IsTransient(ex) && attempt < maxAttempts)
+                    catch (Exception ex) when (attempt < maxAttempts && IsTransientError(ex))
                     {
                         UpdateStatus($"Transient chat error, retrying ({attempt}/{maxAttempts})...");
-                        await Task.Delay(delayMs + (new Random()).Next(0, 200));
+                        await Task.Delay(delayMs + new Random().Next(0, 200));
                         delayMs *= 2;
                         continue;
                     }
@@ -1726,27 +1633,18 @@ namespace Edamam
 
                 if (response == null)
                 {
-                    // final attempt to surface an error or response
-                    response = await _chatService.ChatAsync(userMessage);
+                    response = await _controller.SendChatMessageAsync(userMessage);
                 }
 
-                // Add AI response as a chat bubble
                 AppendChatBubble(response ?? "", isUser: false);
-
                 UpdateStatus("✓ Response received");
             }
             catch (Exception ex)
             {
-                // show friendly message for transient service issues
                 var msg = ex.Message ?? "An error occurred while calling the chat service.";
-                if (msg.ToLowerInvariant().Contains("high demand") || msg.ToLowerInvariant().Contains("rate limit") || msg.ToLowerInvariant().Contains("503"))
-                {
-                    ShowError("Chat Error", "Chat service is temporarily overloaded. Please try again in a few minutes.");
-                }
-                else
-                {
-                    ShowError("Chat Error", msg);
-                }
+                var errorTitle = _controller.GetChatErrorTitle(ex);
+                var errorMsg = _controller.GetChatErrorMessage(ex);
+                ShowError(errorTitle, errorMsg);
                 UpdateStatus($"✗ Error: {msg}");
             }
             finally
@@ -1755,6 +1653,13 @@ namespace Edamam
                 TextBoxChatInput.ReadOnly = false;
                 TextBoxChatInput.Focus();
             }
+        }
+
+        private bool IsTransientError(Exception ex)
+        {
+            if (ex is System.Net.Http.HttpRequestException) return true;
+            var m = ex.Message?.ToLowerInvariant() ?? string.Empty;
+            return m.Contains("high demand") || m.Contains("rate limit") || m.Contains("429") || m.Contains("503") || m.Contains("timeout");
         }
 
         private void AppendChatBubble(string message, bool isUser)
