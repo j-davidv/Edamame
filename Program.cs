@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Edamam.Infrastructure.Configuration;
+using Edamam.Presentation.Interfaces;
 
 namespace Edamam
 {
@@ -29,8 +30,9 @@ namespace Edamam
 
             var serviceProvider = services.BuildServiceProvider();
 
-            // create and run the main form with DI container
-            var form = new Form1(serviceProvider);
+            // create and run the main form 
+            var controller = serviceProvider.GetRequiredService<IFormController>();
+            var form = new Form1(controller);
             RunWindowsFormsApp(form);
         }
 
