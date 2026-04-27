@@ -62,6 +62,26 @@ public class LiteDbRepository<T> : IRepository<T>
         });
     }
 
+    public async Task<IEnumerable<T>> GetAsync(Func<T, bool> predicate)
+    {
+        if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+
+        return await Task.Run(() =>
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _collection.FindAll()
+                    .Where(predicate)
+                    .ToList();
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        });
+    }
+
     public async Task<string> CreateAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
