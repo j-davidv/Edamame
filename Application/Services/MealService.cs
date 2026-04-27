@@ -3,9 +3,8 @@ using Edamam.Domain.Interfaces;
 
 namespace Edamam.Application.Services;
 
-// coordinates between repos and services (the application layer)
 
-public class MealService
+public class MealService : IMealService
 {
     private readonly IRepository<Meal> _mealRepository;
     private readonly IRepository<Recipe> _recipeRepository;
@@ -24,9 +23,7 @@ public class MealService
         _dailyAggregator = dailyAggregator ?? throw new ArgumentNullException(nameof(dailyAggregator));
     }
 
-
-    // creates a new meal and analyzes its nutritional content
-
+    /// create and analyze meal
     public async Task<Meal> CreateAndAnalyzeMealAsync(Meal meal)
     {
         if (meal == null) throw new ArgumentNullException(nameof(meal));
@@ -40,39 +37,37 @@ public class MealService
         return meal;
     }
 
-    // sgets all meals for a specific date
-
+    /// sget all meals for a specific date
     public async Task<IEnumerable<Meal>> GetMealsForDateAsync(DateTime date)
     {
         return await _dailyAggregator.GetMealsForDateAsync(date);
     }
 
-    /// gets the daily nutritional summary
+    /// get the daily nutritional summary
     public async Task<string> GetDailySummaryAsync(DateTime date)
     {
         return await _dailyAggregator.GetDailySummaryAsync(date);
     }
 
-    // retrieves a meal by ID
+    /// retrieve a meal by ID
     public async Task<Meal?> GetMealByIdAsync(string id)
     {
         return await _mealRepository.GetByIdAsync(id);
     }
 
-    // updates a meal's nutritional information
+    /// update a meal's nutritional information
     public async Task<bool> UpdateMealAsync(string id, Meal meal)
     {
         return await _mealRepository.UpdateAsync(id, meal);
     }
 
-    // deletes a meal by ID
+    /// delete a meal by ID
     public async Task<bool> DeleteMealAsync(string id)
     {
         return await _mealRepository.DeleteAsync(id);
     }
 
-    // creates and analyzes a recipe
-
+    /// create and analyze a recipe
     public async Task<Recipe> CreateAndAnalyzeRecipeAsync(Recipe recipe)
     {
         if (recipe == null) throw new ArgumentNullException(nameof(recipe));
@@ -83,7 +78,7 @@ public class MealService
         return recipe;
     }
 
-    // ghets all recipes
+    /// get all recipes
     public async Task<IEnumerable<Recipe>> GetAllRecipesAsync()
     {
         return await _recipeRepository.GetAllAsync();
