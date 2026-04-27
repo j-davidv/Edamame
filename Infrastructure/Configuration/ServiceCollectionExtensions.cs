@@ -1,13 +1,16 @@
 using LiteDB;
 using Microsoft.Extensions.DependencyInjection;
+using Edamam.Application.Interfaces;
 using Edamam.Application.Services;
 using Edamam.Domain.Entities;
 using Edamam.Domain.Interfaces;
 using Edamam.Infrastructure.ExternalServices;
 using Edamam.Infrastructure.Persistence;
+using Edamam.Presentation.Helpers;
+using Edamam.Presentation.Interfaces;
+using Edamam.Presentation.Services;
 
 namespace Edamam.Infrastructure.Configuration;
-
 public static class ServiceCollectionExtensions
 {
     // registers all application services with DI container
@@ -16,15 +19,10 @@ public static class ServiceCollectionExtensions
         string? geminiApiKey = null,
         string? databasePath = null)
     {
+        // Resolve Gemini API key
         if (string.IsNullOrWhiteSpace(geminiApiKey))
         {
             geminiApiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
-        }
-
-        if (string.IsNullOrWhiteSpace(geminiApiKey))
-        {
-            throw new InvalidOperationException(
-                "Gemini API key is required. Set GOOGLE_API_KEY environment variable.");
         }
 
         // persistence
@@ -40,18 +38,51 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRepository<Recipe>>(provider =>
             new LiteDbRepository<Recipe>(provider.GetRequiredService<ILiteDatabase>()));
 
-        // external svc
-        services.AddScoped<INutritionAnalysisService>(provider =>
-            new GeminiNutritionAnalysisService(geminiApiKey));
-
-        services.AddScoped<IGeminiChatService>(provider =>
-            new GeminiChatService(geminiApiKey));
-
-        // aggregator
+        // domain svcs
         services.AddScoped<IDailyMealAggregator>(provider =>
             new DailyMealAggregator(provider.GetRequiredService<IRepository<Meal>>()));
 
-        services.AddScoped<MealService>();
+        // external svcs
+        if (!string.IsNullOrWhiteSpace(geminiApiKey))
+        {
+            services.AddScoped<INutritionAnalysisService>(provider =>
+                new GeminiNutritionAnalysisService(geminiApiKey));
+
+            services.AddScoped<IGeminiChatService>(provider =>
+                new GeminiChatService(geminiApiKey));
+        }
+        else
+        {
+            // use NullChatService when API key unavailable
+            services.AddScoped<IGeminiChatService>(_ => new NullChatService());
+            
+            // throw for nutrition service
+            services.AddScoped<INutritionAnalysisService>(provider =>
+            {
+                throw new InvalidOperationException(
+                    "Nutrition Analysis Service requires GOOGLE_API_KEY environment variable.");
+            });
+        }
+
+        // app svcs
+        services.AddScoped<IMealService, MealService>();
+        services.AddScoped<MealService>();  // Also register concrete type for backward compatibility
+
+        // presentation svcs
+        services.AddScoped<MealUIService>();
+        services.AddScoped<DashboardService>();
+        services.AddScoped<BmiUIService>();
+        services.AddScoped<ChatUIService>();
+        services.AddScoped<SettingsService>();
+        services.AddScoped<UIRenderingService>();
+
+        // parsing and theme 
+        services.AddScoped<IIngredientParser, IngredientParser>();
+        services.AddScoped<IColorTheme, DefaultColorTheme>();
+        
+        // presentation controller
+        services.AddScoped<Presentation.Controllers.FormController>();
+        services.AddScoped<IFormController>(provider => provider.GetRequiredService<Presentation.Controllers.FormController>());
 
         return services;
     }
