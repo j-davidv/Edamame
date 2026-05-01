@@ -68,15 +68,40 @@ namespace Edamam
                 }
             };
 
+            // logo 
+            var navHeaderPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 0, 15),
+                Padding = new Padding(0)
+            };
+
+            // Logo PictureBox
+            var logoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "logo.png");
+            var logoPictureBox = new PictureBox
+            {
+                Image = File.Exists(logoPath) ? Image.FromFile(logoPath) : null,
+                Width = 42,
+                Height = 42,
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                Margin = new Padding(0, 0, 8, 0)
+            };
+
+            // App name label
             var navBrandLabel = new Label
             {
                 Text = "Edamam",
                 Font = new Font("Segoe UI Semibold", 13, FontStyle.Bold),
                 ForeColor = Color.White,
                 AutoSize = true,
-                Dock = DockStyle.Top,
-                Margin = new Padding(0, 0, 0, 2)
+                Margin = new Padding(0, 7, 0, 0)
             };
+
+            navHeaderPanel.Controls.Add(logoPictureBox);
+            navHeaderPanel.Controls.Add(navBrandLabel);
 
             var navFlowPanel = new FlowLayoutPanel
             {
@@ -99,7 +124,7 @@ namespace Edamam
             navFlowPanel.Controls.Add(BtnNavBmi);
 
             sideNavCardPanel.Controls.Add(navFlowPanel);
-            sideNavCardPanel.Controls.Add(navBrandLabel);
+            sideNavCardPanel.Controls.Add(navHeaderPanel);
             sideNavPanel.Controls.Add(sideNavCardPanel);
 
             // BMI CALCULATOR CARD
