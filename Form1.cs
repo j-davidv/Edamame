@@ -389,14 +389,28 @@ namespace Edamam
                 BackColor = Color.FromArgb(243, 244, 246)
             };
 
+            // Use a table layout to center controls horizontally
+            var content = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 3,
+                Padding = new Padding(12),
+                BackColor = Color.Transparent,
+                AutoSize = false
+            };
+            content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            content.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
             var labelGoal = new Label
             {
                 Text = "Daily Calorie Goal (kcal):",
                 Font = new Font("Segoe UI", 11),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 AutoSize = true,
-                Margin = new Padding(20, 30, 20, 10),
-                Location = new Point(20, 30)
+                Anchor = AnchorStyles.None
             };
 
             var inputGoal = new TextBox
@@ -408,7 +422,15 @@ namespace Edamam
                 BorderStyle = BorderStyle.FixedSingle,
                 Width = 150,
                 Height = 32,
-                Location = new Point(20, 60)
+                Anchor = AnchorStyles.None
+            };
+
+            var buttonsPanel = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Anchor = AnchorStyles.None
             };
 
             var btnSave = new Button
@@ -420,7 +442,7 @@ namespace Edamam
                 FlatStyle = FlatStyle.Flat,
                 Width = 100,
                 Height = 36,
-                Location = new Point(20, 110)
+                Anchor = AnchorStyles.None
             };
             btnSave.FlatAppearance.BorderSize = 0;
             btnSave.FlatAppearance.MouseOverBackColor = Color.FromArgb(45, 145, 71);
@@ -449,16 +471,27 @@ namespace Edamam
                 FlatStyle = FlatStyle.Flat,
                 Width = 100,
                 Height = 36,
-                Location = new Point(130, 110)
+                Anchor = AnchorStyles.None
             };
             btnCancel.FlatAppearance.BorderSize = 0;
             btnCancel.Click += (s, e) => form.Close();
 
-            form.Controls.Add(labelGoal);
-            form.Controls.Add(inputGoal);
-            form.Controls.Add(btnSave);
-            form.Controls.Add(btnCancel);
+            buttonsPanel.Controls.Add(btnSave);
+            buttonsPanel.Controls.Add(btnCancel);
 
+            // Add controls to content and center them
+            content.Controls.Add(labelGoal, 0, 0);
+            content.Controls.Add(inputGoal, 0, 1);
+            content.Controls.Add(buttonsPanel, 0, 2);
+
+            // Ensure controls are centered horizontally
+            foreach (Control c in content.Controls)
+            {
+                c.Margin = new Padding(6);
+                c.Anchor = AnchorStyles.None;
+            }
+
+            form.Controls.Add(content);
             form.ShowDialog(this);
         }
 
