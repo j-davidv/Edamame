@@ -18,8 +18,7 @@ public class Meal : EntityBase
 
     public string? Notes { get; set; }
 
-    private readonly List<Recipe> _recipes = new();
-    public IReadOnlyList<Recipe> Recipes => _recipes.AsReadOnly();
+    public List<Recipe> Recipes { get; set; } = new();
 
     public NutritionalMetric? Nutritionals { get; set; }
 
@@ -62,7 +61,8 @@ public class Meal : EntityBase
         }
 
         // Validate all recipes
-        foreach (var recipe in _recipes)
+        Recipes ??= new List<Recipe>();
+        foreach (var recipe in Recipes)
         {
             recipe.ValidateState();
         }
@@ -80,7 +80,8 @@ public class Meal : EntityBase
         if (recipe == null)
             throw new ArgumentNullException(nameof(recipe), "Recipe cannot be null");
         recipe.ValidateState();
-        _recipes.Add(recipe);
+        Recipes ??= new List<Recipe>();
+        Recipes.Add(recipe);
         MarkAsModified();
     }
 
@@ -99,7 +100,8 @@ public class Meal : EntityBase
     /// Remove recipe by ID
     public bool RemoveRecipe(ObjectId recipeId)
     {
-        var removed = _recipes.RemoveAll(r => r.Id == recipeId) > 0;
+        Recipes ??= new List<Recipe>();
+        var removed = Recipes.RemoveAll(r => r.Id == recipeId) > 0;
         if (removed)
             MarkAsModified();
         return removed;
@@ -108,14 +110,15 @@ public class Meal : EntityBase
     /// clear all recipes 
     public virtual void ClearRecipes()
     {
-        if (_recipes.Count > 0)
+        Recipes ??= new List<Recipe>();
+        if (Recipes.Count > 0)
         {
-            _recipes.Clear();
+            Recipes.Clear();
             MarkAsModified();
         }
     }
 
-    public override string ToString() => $"Meal: {Name} ({_recipes.Count} recipes) - {MealDate:g}";
+    public override string ToString() => $"Meal: {Name} ({Recipes?.Count ?? 0} recipes) - {MealDate:g}";
 }
 
 /// enums for polymorphication support
