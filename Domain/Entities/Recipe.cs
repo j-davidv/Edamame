@@ -18,8 +18,7 @@ public class Recipe : EntityBase
 
     public string? Description { get; set; }
 
-    private readonly List<Ingredient> _ingredients = new();
-    public IReadOnlyList<Ingredient> Ingredients => _ingredients.AsReadOnly();
+    public List<Ingredient> Ingredients { get; set; } = new();
 
     public Recipe(string name, string? description = null)
     {
@@ -37,7 +36,8 @@ public class Recipe : EntityBase
             throw new InvalidOperationException("Recipe must have a valid name");
 
         // Validate all ingredients
-        foreach (var ingredient in _ingredients)
+        Ingredients ??= new List<Ingredient>();
+        foreach (var ingredient in Ingredients)
         {
             ingredient.ValidateState();
         }
@@ -46,7 +46,7 @@ public class Recipe : EntityBase
     /// get display name for the recipe
     public override string GetDisplayName()
     {
-        return $"{Name} ({_ingredients.Count} ingredients)";
+        return $"{Name} ({Ingredients?.Count ?? 0} ingredients)";
     }
 
     /// add ingredient
@@ -55,7 +55,8 @@ public class Recipe : EntityBase
         if (ingredient == null)
             throw new ArgumentNullException(nameof(ingredient), "Ingredient cannot be null");
         ingredient.ValidateState();
-        _ingredients.Add(ingredient);
+        Ingredients ??= new List<Ingredient>();
+        Ingredients.Add(ingredient);
         MarkAsModified();
     }
 
@@ -74,7 +75,8 @@ public class Recipe : EntityBase
     /// remove ingredient by ID
     public bool RemoveIngredient(ObjectId ingredientId)
     {
-        var removed = _ingredients.RemoveAll(i => i.Id == ingredientId) > 0;
+        Ingredients ??= new List<Ingredient>();
+        var removed = Ingredients.RemoveAll(i => i.Id == ingredientId) > 0;
         if (removed)
             MarkAsModified();
         return removed;
@@ -83,14 +85,15 @@ public class Recipe : EntityBase
     /// clear all ingredients
     public virtual void ClearIngredients()
     {
-        if (_ingredients.Count > 0)
+        Ingredients ??= new List<Ingredient>();
+        if (Ingredients.Count > 0)
         {
-            _ingredients.Clear();
+            Ingredients.Clear();
             MarkAsModified();
         }
     }
 
-    public override string ToString() => $"Recipe: {Name} ({_ingredients.Count} ingredients)";
+    public override string ToString() => $"Recipe: {Name} ({Ingredients?.Count ?? 0} ingredients)";
 }
 
 
