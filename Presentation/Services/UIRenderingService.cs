@@ -1,4 +1,4 @@
-using Edamam.Presentation.Helpers;
+﻿using Edamam.Presentation.Helpers;
 
 namespace Edamam.Presentation.Services
 {
@@ -45,7 +45,7 @@ namespace Edamam.Presentation.Services
             var labelControl = new Label
             {
                 Text = label,
-                Font = new Font("Segoe UI", labelFontSize),
+                Font = new Font("Segoe UI Variable Text", labelFontSize),
                 ForeColor = ColorScheme.TextMuted,
                 AutoSize = true,
                 Margin = new Padding(15, 15, 15, 0),
@@ -55,7 +55,7 @@ namespace Edamam.Presentation.Services
             var valueControl = new Label
             {
                 Text = value,
-                Font = new Font("Segoe UI", valueFontSize, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", valueFontSize, FontStyle.Bold),
                 ForeColor = accentColor,
                 AutoSize = true,
                 Margin = new Padding(15, 10, 15, 0),
@@ -65,7 +65,7 @@ namespace Edamam.Presentation.Services
             var unitControl = new Label
             {
                 Text = unit,
-                Font = new Font("Segoe UI", 9),
+                Font = new Font("Segoe UI Variable Text", 9),
                 ForeColor = ColorScheme.TextMuted,
                 AutoSize = true,
                 Margin = new Padding(15, 5, 15, 0),
@@ -81,7 +81,7 @@ namespace Edamam.Presentation.Services
                 var progressLabel = new Label
                 {
                     Text = $"Daily Goal: {currentCalories:F0} / {dailyGoal:F0}",
-                    Font = new Font("Segoe UI", 8),
+                    Font = new Font("Segoe UI Variable Text", 8),
                     ForeColor = ColorScheme.TextMuted,
                     AutoSize = true,
                     Margin = new Padding(15, 8, 15, 2),
@@ -124,7 +124,7 @@ namespace Edamam.Presentation.Services
                 Text = text,
                 BackColor = ColorScheme.BrandNavInactive,
                 ForeColor = ColorScheme.TextLight,
-                Font = new Font("Segoe UI Semibold", 11, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Display", 11, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 Height = 40,
                 Dock = DockStyle.Top,
@@ -143,7 +143,7 @@ namespace Edamam.Presentation.Services
                 Text = text,
                 BackColor = Color.Black,
                 ForeColor = Color.White,
-                Font = new Font("Segoe UI Semibold", 10, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Display", 10, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 Height = 38,
@@ -155,3 +155,5 @@ namespace Edamam.Presentation.Services
         }
     }
 }
+
+
