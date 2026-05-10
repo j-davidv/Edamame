@@ -1119,7 +1119,7 @@ namespace Edamam
                     {
                         var ingredientLabel = new Label
                         {
-                            Text = $"   - {ingredient.Quantity} {ingredient.Unit} {ingredient.Name}",
+                            Text = $"   - {ingredient.QuantityString} {ingredient.Unit} {ingredient.Name}",
                             Font = new Font("Segoe UI Variable Text", 10),
                             ForeColor = Color.FromArgb(100, 100, 100),
                             AutoSize = true,
@@ -1252,7 +1252,7 @@ namespace Edamam
                 {
                     foreach (var ingredient in recipe.Ingredients)
                     {
-                        recipesText.AppendLine($"{ingredient.Quantity} {ingredient.Unit} {ingredient.Name}");
+                        recipesText.AppendLine($"{ingredient.QuantityString} {ingredient.Unit} {ingredient.Name}");
                     }
                 }
             }
