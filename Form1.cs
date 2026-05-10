@@ -1,4 +1,4 @@
-using Edamam.Presentation.Interfaces;
+﻿using Edamam.Presentation.Interfaces;
 using Edamam.Presentation.Models;
 using Edamam.Domain.Entities;
 using Edamam.Domain.Interfaces;
@@ -22,6 +22,7 @@ namespace Edamam
             InitializeComponent();
             _controller = controller ?? throw new ArgumentNullException(nameof(controller));
             _currentContentPanel = null!;
+            ChatHistoryPanel.SizeChanged += (s, e) => ResizeChatRows();
         }
 
         private async void Form1_Load(object sender, EventArgs e)
@@ -42,12 +43,12 @@ namespace Edamam
                 _dailyCalorieGoal = _controller.LoadDailyCalorieGoal();
 
                 // Add welcome message to chat
-                AppendChatBubble("👋 Hi! I'm your AI Nutrition Coach.\n\n" +
-                    "💡 You can ask me about:\n" +
-                    "• Macronutrient breakdowns\n" +
-                    "• Nutrition goals\n" +
-                    "• Meal suggestions\n" +
-                    "• Health tips\n\n" +
+                AppendChatBubble("Hi! I'm your AI Nutrition Coach.\n\n" +
+                    "You can ask me about:\n" +
+                    "- Macronutrient breakdowns\n" +
+                    "- Nutrition goals\n" +
+                    "- Meal suggestions\n" +
+                    "- Health tips\n\n" +
                     "Let's make your meals healthier!", isUser: false);
 
                 // Check chat availability through controller
@@ -175,93 +176,88 @@ namespace Edamam
             var filterPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 80,
-                BackColor = Color.FromArgb(250, 250, 250),
-                BorderStyle = BorderStyle.FixedSingle
+                Height = 72,
+                BackColor = Color.White,
+                Padding = new Padding(14, 12, 14, 12),
+                Margin = new Padding(0, 0, 0, 14)
             };
+
+            filterPanel.Paint += (s, e) =>
+            {
+                using var pen = new Pen(Color.FromArgb(228, 231, 236), 1);
+                using var brush = new SolidBrush(Color.White);
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                e.Graphics.FillRoundedRectangle(brush, 0, 0, filterPanel.Width, filterPanel.Height, 10);
+                e.Graphics.DrawRoundedRectangle(pen, 0, 0, filterPanel.Width - 1, filterPanel.Height - 1, 10);
+            };
+
+            var toolbar = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 4,
+                RowCount = 1,
+                BackColor = Color.Transparent
+            };
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
             var label = new Label
             {
-                Text = "Filter Macros By:",
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 33, 33),
-                Location = new Point(15, 12),
-                AutoSize = true
+                Text = "View",
+                Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold),
+                ForeColor = Color.FromArgb(58, 65, 78),
+                AutoSize = true,
+                Anchor = AnchorStyles.Left,
+                Margin = new Padding(0, 0, 12, 0)
             };
 
-            // buttons
-            var radioDailyPanel = new Panel { Location = new Point(150, 10), Size = new Size(130, 25) };
-            var radioDailyBtn = new RadioButton
+            var segmentPanel = new FlowLayoutPanel
             {
-                Text = "Daily",
-                Checked = _currentFilterType == "Daily",
-                Font = new Font("Segoe UI", 10),
-                Dock = DockStyle.Fill
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Anchor = AnchorStyles.Left,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0)
             };
-            radioDailyBtn.CheckedChanged += (s, e) =>
+
+            Button CreateSegment(string text)
             {
-                if (radioDailyBtn.Checked)
+                var selected = _currentFilterType == text;
+                var button = new Button
                 {
-                    _currentFilterType = "Daily";
-                    _selectedFilterDate = DateTime.Today;
-                    ShowDashboardPanel();
-                }
-            };
-            radioDailyPanel.Controls.Add(radioDailyBtn);
-
-            var radioWeeklyPanel = new Panel { Location = new Point(280, 10), Size = new Size(130, 25) };
-            var radioWeeklyBtn = new RadioButton
-            {
-                Text = "Weekly",
-                Checked = _currentFilterType == "Weekly",
-                Font = new Font("Segoe UI", 10),
-                Dock = DockStyle.Fill
-            };
-            radioWeeklyBtn.CheckedChanged += (s, e) =>
-            {
-                if (radioWeeklyBtn.Checked)
+                    Text = text,
+                    Width = 84,
+                    Height = 34,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI Variable Text", 9, selected ? FontStyle.Bold : FontStyle.Regular),
+                    BackColor = selected ? Color.FromArgb(52, 168, 83) : Color.FromArgb(244, 246, 248),
+                    ForeColor = selected ? Color.White : Color.FromArgb(58, 65, 78),
+                    Cursor = Cursors.Hand,
+                    Margin = new Padding(0, 0, 6, 0)
+                };
+                button.FlatAppearance.BorderSize = 0;
+                button.Click += (s, e) =>
                 {
-                    _currentFilterType = "Weekly";
+                    _currentFilterType = text;
+                    if (text == "Daily")
+                        _selectedFilterDate = DateTime.Today;
                     ShowDashboardPanel();
-                }
-            };
-            radioWeeklyPanel.Controls.Add(radioWeeklyBtn);
-
-            var radioMonthlyPanel = new Panel { Location = new Point(410, 10), Size = new Size(130, 25) };
-            var radioMonthlyBtn = new RadioButton
-            {
-                Text = "Monthly",
-                Checked = _currentFilterType == "Monthly",
-                Font = new Font("Segoe UI", 10),
-                Dock = DockStyle.Fill
-            };
-            radioMonthlyBtn.CheckedChanged += (s, e) =>
-            {
-                if (radioMonthlyBtn.Checked)
-                {
-                    _currentFilterType = "Monthly";
-                    ShowDashboardPanel();
-                }
-            };
-            radioMonthlyPanel.Controls.Add(radioMonthlyBtn);
-
-            // date nav
-            var dateLabel = new Label
-            {
-                Text = "Date:",
-                Font = new Font("Segoe UI", 10),
-                ForeColor = Color.FromArgb(66, 66, 66),
-                Location = new Point(15, 45),
-                AutoSize = true
-            };
+                };
+                return button;
+            }
 
             var datePickerControl = new DateTimePicker
             {
                 Value = _selectedFilterDate,
                 Format = DateTimePickerFormat.Short,
-                Font = new Font("Segoe UI", 10),
-                Location = new Point(60, 43),
-                Width = 120
+                Font = new Font("Segoe UI Variable Text", 10),
+                Width = 132,
+                Height = 34,
+                Anchor = AnchorStyles.Right,
+                Margin = new Padding(10, 0, 8, 0)
             };
             datePickerControl.ValueChanged += (s, e) =>
             {
@@ -269,20 +265,26 @@ namespace Edamam
                 ShowDashboardPanel();
             };
 
-            // prev/next buttons
-            var btnPrevious = new Button
+            Button CreateDateButton(string text, int width, Action action, bool primary = false)
             {
-                Text = "← Previous",
-                Font = new Font("Segoe UI", 9),
-                BackColor = Color.FromArgb(230, 230, 230),
-                ForeColor = Color.FromArgb(33, 33, 33),
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(190, 43),
-                Width = 80,
-                Height = 28
-            };
-            btnPrevious.FlatAppearance.BorderSize = 1;
-            btnPrevious.Click += (s, e) =>
+                var button = new Button
+                {
+                    Text = text,
+                    Font = new Font("Segoe UI Variable Text", 9, primary ? FontStyle.Bold : FontStyle.Regular),
+                    BackColor = primary ? Color.FromArgb(52, 168, 83) : Color.FromArgb(244, 246, 248),
+                    ForeColor = primary ? Color.White : Color.FromArgb(58, 65, 78),
+                    FlatStyle = FlatStyle.Flat,
+                    Width = width,
+                    Height = 34,
+                    Cursor = Cursors.Hand,
+                    Margin = new Padding(0, 0, 6, 0)
+                };
+                button.FlatAppearance.BorderSize = 0;
+                button.Click += (s, e) => action();
+                return button;
+            }
+
+            var btnPrevious = CreateDateButton("Previous", 86, () =>
             {
                 if (_currentFilterType == "Daily")
                     _selectedFilterDate = _selectedFilterDate.AddDays(-1);
@@ -293,21 +295,10 @@ namespace Edamam
 
                 datePickerControl.Value = _selectedFilterDate;
                 ShowDashboardPanel();
-            };
+            });
+            btnPrevious.FlatAppearance.BorderSize = 1;
 
-            var btnNext = new Button
-            {
-                Text = "Next →",
-                Font = new Font("Segoe UI", 9),
-                BackColor = Color.FromArgb(230, 230, 230),
-                ForeColor = Color.FromArgb(33, 33, 33),
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(275, 43),
-                Width = 80,
-                Height = 28
-            };
-            btnNext.FlatAppearance.BorderSize = 1;
-            btnNext.Click += (s, e) =>
+            var btnNext = CreateDateButton("Next", 68, () =>
             {
                 if (_currentFilterType == "Daily")
                     _selectedFilterDate = _selectedFilterDate.AddDays(1);
@@ -318,36 +309,36 @@ namespace Edamam
 
                 datePickerControl.Value = _selectedFilterDate;
                 ShowDashboardPanel();
-            };
+            });
 
-            var btnToday = new Button
-            {
-                Text = "Today",
-                Font = new Font("Segoe UI", 9),
-                BackColor = Color.FromArgb(52, 168, 83),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(360, 43),
-                Width = 70,
-                Height = 28
-            };
-            btnToday.FlatAppearance.BorderSize = 0;
-            btnToday.Click += (s, e) =>
+            var btnToday = CreateDateButton("Today", 72, () =>
             {
                 _selectedFilterDate = DateTime.Today;
                 datePickerControl.Value = _selectedFilterDate;
                 ShowDashboardPanel();
-            };
+            }, primary: true);
 
-            filterPanel.Controls.Add(label);
-            filterPanel.Controls.Add(radioDailyPanel);
-            filterPanel.Controls.Add(radioWeeklyPanel);
-            filterPanel.Controls.Add(radioMonthlyPanel);
-            filterPanel.Controls.Add(dateLabel);
-            filterPanel.Controls.Add(datePickerControl);
-            filterPanel.Controls.Add(btnPrevious);
-            filterPanel.Controls.Add(btnNext);
-            filterPanel.Controls.Add(btnToday);
+            var navPanel = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Anchor = AnchorStyles.Right,
+                Margin = new Padding(0),
+                BackColor = Color.Transparent
+            };
+            segmentPanel.Controls.Add(CreateSegment("Daily"));
+            segmentPanel.Controls.Add(CreateSegment("Weekly"));
+            segmentPanel.Controls.Add(CreateSegment("Monthly"));
+            navPanel.Controls.Add(btnPrevious);
+            navPanel.Controls.Add(btnToday);
+            navPanel.Controls.Add(btnNext);
+
+            toolbar.Controls.Add(label, 0, 0);
+            toolbar.Controls.Add(segmentPanel, 1, 0);
+            toolbar.Controls.Add(datePickerControl, 2, 0);
+            toolbar.Controls.Add(navPanel, 3, 0);
+            filterPanel.Controls.Add(toolbar);
 
             return filterPanel;
         }
@@ -407,7 +398,7 @@ namespace Edamam
             var labelGoal = new Label
             {
                 Text = "Daily Calorie Goal (kcal):",
-                Font = new Font("Segoe UI", 11),
+                Font = new Font("Segoe UI Variable Text", 11),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 AutoSize = true,
                 Anchor = AnchorStyles.None
@@ -416,7 +407,7 @@ namespace Edamam
             var inputGoal = new TextBox
             {
                 Text = _dailyCalorieGoal.ToString("F0"),
-                Font = new Font("Segoe UI", 11),
+                Font = new Font("Segoe UI Variable Text", 11),
                 BackColor = Color.White,
                 ForeColor = Color.FromArgb(33, 33, 33),
                 BorderStyle = BorderStyle.FixedSingle,
@@ -436,7 +427,7 @@ namespace Edamam
             var btnSave = new Button
             {
                 Text = "Save",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold),
                 BackColor = Color.FromArgb(52, 168, 83),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -465,7 +456,7 @@ namespace Edamam
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Font = new Font("Segoe UI", 10),
+                Font = new Font("Segoe UI Variable Text", 10),
                 BackColor = Color.FromArgb(200, 200, 200),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 FlatStyle = FlatStyle.Flat,
@@ -628,7 +619,7 @@ namespace Edamam
             var labelControl = new Label
             {
                 Text = label,
-                Font = new Font("Segoe UI", labelFontSize),
+                Font = new Font("Segoe UI Variable Text", labelFontSize),
                 ForeColor = Color.FromArgb(100, 100, 100),
                 AutoSize = true,
                 Margin = new Padding(15, 15, 15, 0),
@@ -639,7 +630,7 @@ namespace Edamam
             var valueControl = new Label
             {
                 Text = value,
-                Font = new Font("Segoe UI", valueFontSize, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", valueFontSize, FontStyle.Bold),
                 ForeColor = accentColor,
                 AutoSize = true,
                 Margin = new Padding(15, 10, 15, 0),
@@ -650,7 +641,7 @@ namespace Edamam
             var unitControl = new Label
             {
                 Text = unit,
-                Font = new Font("Segoe UI", 9),
+                Font = new Font("Segoe UI Variable Text", 9),
                 ForeColor = Color.FromArgb(150, 150, 150),
                 AutoSize = true,
                 Margin = new Padding(15, 5, 15, 0),
@@ -668,7 +659,7 @@ namespace Edamam
                 var progressLabel = new Label
                 {
                     Text = $"Daily Goal: {totalCalories:F0} / {dailyGoal:F0}",
-                    Font = new Font("Segoe UI", 8),
+                    Font = new Font("Segoe UI Variable Text", 8),
                     ForeColor = Color.FromArgb(120, 120, 120),
                     AutoSize = true,
                     Margin = new Padding(15, 8, 15, 2),
@@ -730,7 +721,7 @@ namespace Edamam
             var titleLabel = new Label
             {
                 Text = "Macronutrient Breakdown",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 12, FontStyle.Bold),
                 ForeColor = Color.FromArgb(31, 71, 55),
                 AutoSize = true,
                 Margin = new Padding(15, 15, 0, 12),
@@ -850,7 +841,7 @@ namespace Edamam
             var textLabel = new Label
             {
                 Text = $"{label} {value} ({percent:F0}%)",
-                Font = new Font("Segoe UI", 9),
+                Font = new Font("Segoe UI Variable Text", 9),
                 ForeColor = Color.FromArgb(80, 80, 80),
                 AutoSize = true,
                 Dock = DockStyle.Fill
@@ -870,40 +861,54 @@ namespace Edamam
             var titleLabel = new Label
             {
                 Text = "My Meals",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 33, 33),
+                Font = new Font("Segoe UI Variable Display", 20, FontStyle.Bold),
+                ForeColor = Color.FromArgb(28, 62, 49),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 15),
                 Dock = DockStyle.Top
             };
 
-            var searchPanel = new FlowLayoutPanel
+            var searchPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
-                AutoSize = true,
-                FlowDirection = FlowDirection.LeftToRight,
-                Margin = new Padding(0, 0, 0, 15),
-                WrapContents = false
+                Height = 52,
+                ColumnCount = 2,
+                BackColor = Color.White,
+                Padding = new Padding(12, 9, 12, 9),
+                Margin = new Padding(0, 0, 0, 15)
+            };
+            searchPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            searchPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            searchPanel.Paint += (s, e) =>
+            {
+                using var pen = new Pen(Color.FromArgb(228, 231, 236), 1);
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                e.Graphics.DrawRoundedRectangle(pen, 0, 0, searchPanel.Width - 1, searchPanel.Height - 1, 8);
             };
 
             var searchLabel = new Label
             {
                 Text = "Search:",
-                Font = new Font("Segoe UI", 10),
+                Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold),
+                ForeColor = Color.FromArgb(58, 65, 78),
                 AutoSize = true,
-                Margin = new Padding(0, 5, 10, 0)
+                Anchor = AnchorStyles.Left,
+                Margin = new Padding(0, 0, 10, 0)
             };
 
             var searchBox = new TextBox
             {
-                Width = 200,
-                Height = 28,
+                Dock = DockStyle.Fill,
+                Height = 30,
+                Font = new Font("Segoe UI Variable Text", 10),
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.FromArgb(250, 250, 250),
                 PlaceholderText = "Search meals...",
-                Margin = new Padding(0, 0, 10, 0)
+                Margin = new Padding(0)
             };
 
-            searchPanel.Controls.Add(searchLabel);
-            searchPanel.Controls.Add(searchBox);
+            searchPanel.Controls.Add(searchLabel, 0, 0);
+            searchPanel.Controls.Add(searchBox, 1, 0);
 
             var mealsGrid = new DataGridView
             {
@@ -915,28 +920,59 @@ namespace Edamam
                 ReadOnly = true,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 RowHeadersVisible = false,
-                Font = new Font("Segoe UI", 10),
+                Font = new Font("Segoe UI Variable Text", 10),
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                EnableHeadersVisualStyles = false,
+                GridColor = Color.FromArgb(232, 236, 241),
+                ColumnHeadersHeight = 38,
+                RowTemplate = { Height = 36 },
+                CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal
             };
 
-            mealsGrid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
-            mealsGrid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(33, 33, 33);
-            mealsGrid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-            mealsGrid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 250, 250);
+            mealsGrid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(244, 246, 248);
+            mealsGrid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(58, 65, 78);
+            mealsGrid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold);
+            mealsGrid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(229, 242, 235);
+            mealsGrid.DefaultCellStyle.SelectionForeColor = Color.FromArgb(28, 62, 49);
+            mealsGrid.DefaultCellStyle.ForeColor = Color.FromArgb(45, 52, 61);
+            mealsGrid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(249, 251, 252);
+
+            DataGridViewLinkColumn CreateActionColumn(string name, string headerText, string text, int width, Color linkColor)
+            {
+                return new DataGridViewLinkColumn
+                {
+                    Name = name,
+                    HeaderText = headerText,
+                    Width = width,
+                    Text = text,
+                    UseColumnTextForLinkValue = true,
+                    LinkColor = linkColor,
+                    ActiveLinkColor = Color.FromArgb(28, 62, 49),
+                    VisitedLinkColor = linkColor,
+                    TrackVisitedState = false,
+                    DefaultCellStyle =
+                    {
+                        ForeColor = linkColor,
+                        SelectionForeColor = linkColor,
+                        SelectionBackColor = Color.FromArgb(229, 242, 235),
+                        Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold)
+                    }
+                };
+            }
 
             mealsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Name", HeaderText = "Meal Name", Width = 150 });
             mealsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type", HeaderText = "Type", Width = 80 });
             mealsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Date", Width = 100 });
             mealsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Calories", HeaderText = "Calories", Width = 80 });
             mealsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Protein", HeaderText = "Protein(g)", Width = 80 });
-            mealsGrid.Columns.Add(new DataGridViewLinkColumn { Name = "ViewRecipe", HeaderText = "View Recipe", Width = 80, Text = "View" });
-            mealsGrid.Columns.Add(new DataGridViewLinkColumn { Name = "EditMeal", HeaderText = "Edit", Width = 50, Text = "Edit" });
-            mealsGrid.Columns.Add(new DataGridViewLinkColumn { Name = "DeleteMeal", HeaderText = "Delete", Width = 60, Text = "Delete" });
+            mealsGrid.Columns.Add(CreateActionColumn("ViewRecipe", "View Recipe", "View", 80, Color.FromArgb(45, 105, 75)));
+            mealsGrid.Columns.Add(CreateActionColumn("EditMeal", "Edit", "Edit", 50, Color.FromArgb(51, 100, 190)));
+            mealsGrid.Columns.Add(CreateActionColumn("DeleteMeal", "Delete", "Delete", 60, Color.FromArgb(190, 55, 65)));
 
             var allMeals = _controller.GetAllMeals();
             foreach (var meal in allMeals)
             {
-                mealsGrid.Rows.Add(
+                var rowIndex = mealsGrid.Rows.Add(
                     meal.Name,
                     meal.Type,
                     meal.MealDate.ToString("MMM dd, yyyy"),
@@ -946,13 +982,15 @@ namespace Edamam
                     "Edit",
                     "Delete"
                 );
+                mealsGrid.Rows[rowIndex].Tag = meal;
             }
 
             mealsGrid.CellContentClick += async (s, e) =>
             {
                 if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
                 {
-                    var meal = allMeals[e.RowIndex];
+                    if (mealsGrid.Rows[e.RowIndex].Tag is not Meal meal)
+                        return;
 
                     if (e.ColumnIndex == 5) // View Recipe
                     {
@@ -972,7 +1010,7 @@ namespace Edamam
                             {
                                 await _controller.DeleteMealAsync(meal.Id.ToString());
                                 ShowMyMealsPanel();
-                                UpdateStatus($"✓ Meal '{meal.Name}' deleted successfully");
+                                UpdateStatus($"Done: Meal '{meal.Name}' deleted successfully");
                             }
                             catch (Exception ex)
                             {
@@ -992,8 +1030,8 @@ namespace Edamam
                 {
                     if (row.Cells["Name"].Value != null)
                     {
-                        string mealName = row.Cells["Name"].Value.ToString()!.ToLower();
-                        string mealType = row.Cells["Type"].Value?.ToString()?.ToLower() ?? "";
+                        string mealName = Convert.ToString(row.Cells["Name"].Value)?.ToLower() ?? "";
+                        string mealType = Convert.ToString(row.Cells["Type"].Value)?.ToLower() ?? "";
 
                         bool matches = mealName.Contains(searchTerm) || mealType.Contains(searchTerm);
                         row.Visible = matches;
@@ -1016,7 +1054,7 @@ namespace Edamam
             var titleLabel = new Label
             {
                 Text = $"Recipe: {meal.Name}",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 16, FontStyle.Bold),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 15),
@@ -1034,7 +1072,7 @@ namespace Edamam
             var mealTypeLabel = new Label
             {
                 Text = $"Type: {meal.Type}",
-                Font = new Font("Segoe UI", 12),
+                Font = new Font("Segoe UI Variable Text", 12),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 5, 0, 5)
@@ -1043,7 +1081,7 @@ namespace Edamam
             var dateLabel = new Label
             {
                 Text = $"Date: {meal.MealDate:MMM dd, yyyy}",
-                Font = new Font("Segoe UI", 12),
+                Font = new Font("Segoe UI Variable Text", 12),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 5, 0, 15)
@@ -1055,7 +1093,7 @@ namespace Edamam
             var ingredientsLabel = new Label
             {
                 Text = "Ingredients:",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 12, FontStyle.Bold),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 AutoSize = true,
                 Margin = new Padding(0, 10, 0, 8)
@@ -1063,14 +1101,14 @@ namespace Edamam
 
             flowPanel.Controls.Add(ingredientsLabel);
 
-            if (meal.Recipes != null)
+            if (meal.Recipes != null && meal.Recipes.Count > 0)
             {
                 foreach (var recipe in meal.Recipes)
                 {
                     var recipeLabel = new Label
                     {
-                        Text = $"🔸 {recipe.Name}",
-                        Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                        Text = $"Recipe: {recipe.Name}",
+                        Font = new Font("Segoe UI Variable Text", 11, FontStyle.Bold),
                         ForeColor = Color.FromArgb(76, 175, 80),
                         AutoSize = true,
                         Margin = new Padding(0, 5, 0, 5)
@@ -1081,8 +1119,8 @@ namespace Edamam
                     {
                         var ingredientLabel = new Label
                         {
-                            Text = $"   • {ingredient.Quantity} {ingredient.Unit} {ingredient.Name}",
-                            Font = new Font("Segoe UI", 10),
+                            Text = $"   - {ingredient.Quantity} {ingredient.Unit} {ingredient.Name}",
+                            Font = new Font("Segoe UI Variable Text", 10),
                             ForeColor = Color.FromArgb(100, 100, 100),
                             AutoSize = true,
                             Margin = new Padding(0, 3, 0, 3)
@@ -1091,11 +1129,23 @@ namespace Edamam
                     }
                 }
             }
+            else
+            {
+                var noRecipesLabel = new Label
+                {
+                    Text = "No recipe details were saved for this meal.",
+                    Font = new Font("Segoe UI Variable Text", 10),
+                    ForeColor = Color.FromArgb(120, 120, 120),
+                    AutoSize = true,
+                    Margin = new Padding(0, 3, 0, 12)
+                };
+                flowPanel.Controls.Add(noRecipesLabel);
+            }
 
             var nutritionLabel = new Label
             {
                 Text = "Nutrition Info:",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 12, FontStyle.Bold),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 AutoSize = true,
                 Margin = new Padding(0, 20, 0, 10)
@@ -1107,7 +1157,7 @@ namespace Edamam
                 var caloriesLabel = new Label
                 {
                     Text = $"Calories: {meal.Nutritionals.Calories:F0} kcal",
-                    Font = new Font("Segoe UI", 11),
+                    Font = new Font("Segoe UI Variable Text", 11),
                     ForeColor = Color.FromArgb(60, 60, 60),
                     AutoSize = true,
                     Margin = new Padding(0, 5, 0, 5)
@@ -1116,7 +1166,7 @@ namespace Edamam
                 var proteinLabel = new Label
                 {
                     Text = $"Protein: {meal.Nutritionals.Protein:F1} g",
-                    Font = new Font("Segoe UI", 11),
+                    Font = new Font("Segoe UI Variable Text", 11),
                     ForeColor = Color.FromArgb(60, 60, 60),
                     AutoSize = true,
                     Margin = new Padding(0, 5, 0, 5)
@@ -1125,7 +1175,7 @@ namespace Edamam
                 var carbsLabel = new Label
                 {
                     Text = $"Carbohydrates: {meal.Nutritionals.Carbohydrates:F1} g",
-                    Font = new Font("Segoe UI", 11),
+                    Font = new Font("Segoe UI Variable Text", 11),
                     ForeColor = Color.FromArgb(60, 60, 60),
                     AutoSize = true,
                     Margin = new Padding(0, 5, 0, 5)
@@ -1134,7 +1184,7 @@ namespace Edamam
                 var fatLabel = new Label
                 {
                     Text = $"Fat: {meal.Nutritionals.Fat:F1} g",
-                    Font = new Font("Segoe UI", 11),
+                    Font = new Font("Segoe UI Variable Text", 11),
                     ForeColor = Color.FromArgb(60, 60, 60),
                     AutoSize = true,
                     Margin = new Padding(0, 5, 0, 5)
@@ -1160,7 +1210,7 @@ namespace Edamam
             var titleLabel = new Label
             {
                 Text = $"Edit Meal: {meal.Name}",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 16, FontStyle.Bold),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 15),
@@ -1175,10 +1225,10 @@ namespace Edamam
                 WrapContents = false
             };
 
-            var mealNameLabel = new Label { Text = "Meal Name:", Font = new Font("Segoe UI", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 10, 0, 3) };
+            var mealNameLabel = new Label { Text = "Meal Name:", Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 10, 0, 3) };
             var mealNameBox = new TextBox { Text = meal.Name, Width = 300, Height = 28, Margin = new Padding(0, 0, 0, 15) };
 
-            var mealTypeLabel = new Label { Text = "Meal Type:", Font = new Font("Segoe UI", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 0, 0, 3) };
+            var mealTypeLabel = new Label { Text = "Meal Type:", Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 0, 0, 3) };
             var mealTypeCombo = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
@@ -1189,10 +1239,10 @@ namespace Edamam
             mealTypeCombo.Items.AddRange(new[] { "Breakfast", "Brunch", "Lunch", "Snack", "Dinner", "Supper" });
             mealTypeCombo.SelectedIndex = (int)meal.Type;
 
-            var mealDateLabel = new Label { Text = "Date:", Font = new Font("Segoe UI", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 0, 0, 3) };
+            var mealDateLabel = new Label { Text = "Date:", Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 0, 0, 3) };
             var mealDatePicker = new DateTimePicker { Value = meal.MealDate, Width = 300, Height = 28, Format = DateTimePickerFormat.Short, Margin = new Padding(0, 0, 0, 15) };
 
-            var recipesLabel = new Label { Text = "Recipes & Ingredients:", Font = new Font("Segoe UI", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 10, 0, 3) };
+            var recipesLabel = new Label { Text = "Recipes & Ingredients:", Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold), AutoSize = true, Margin = new Padding(0, 10, 0, 3) };
 
             // build recipes text for editing
             var recipesText = new StringBuilder();
@@ -1214,7 +1264,7 @@ namespace Edamam
                 ScrollBars = ScrollBars.Vertical,
                 Width = 400,
                 Height = 150,
-                Font = new Font("Segoe UI", 9),
+                Font = new Font("Segoe UI Variable Text", 9),
                 BackColor = Color.FromArgb(250, 250, 250),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 Margin = new Padding(0, 0, 0, 15)
@@ -1233,7 +1283,7 @@ namespace Edamam
                 Text = "Save Changes",
                 BackColor = Color.Black,
                 ForeColor = Color.White,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 Width = 120,
@@ -1247,7 +1297,7 @@ namespace Edamam
                 Text = "Cancel",
                 BackColor = Color.Gray,
                 ForeColor = Color.White,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 Width = 100,
@@ -1262,7 +1312,7 @@ namespace Edamam
                 {
                     await _controller.UpdateMealAsync(meal, mealNameBox.Text, (MealType)mealTypeCombo.SelectedIndex, mealDatePicker.Value, recipesBox.Text);
                     ShowMyMealsPanel();
-                    UpdateStatus($"✓ Meal '{meal.Name}' updated successfully");
+                    UpdateStatus($"Done: Meal '{meal.Name}' updated successfully");
                 }
                 catch (Exception ex)
                 {
@@ -1299,8 +1349,8 @@ namespace Edamam
             var titleLabel = new Label
             {
                 Text = "Daily Meal Log",
-                Font = new Font("Segoe UI", 20, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 33, 33),
+                Font = new Font("Segoe UI Variable Display", 20, FontStyle.Bold),
+                ForeColor = Color.FromArgb(28, 62, 49),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 5),
                 Dock = DockStyle.Top
@@ -1309,7 +1359,7 @@ namespace Edamam
             var dateLabel = new Label
             {
                 Text = DateTime.Today.ToString("dddd, MMMM dd, yyyy"),
-                Font = new Font("Segoe UI", 12),
+                Font = new Font("Segoe UI Variable Text", 12),
                 ForeColor = Color.FromArgb(100, 100, 100),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 25),
@@ -1330,7 +1380,7 @@ namespace Edamam
             var metricsHeaderLabel = new Label
             {
                 Text = "Daily Totals",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 12, FontStyle.Bold),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 12),
@@ -1340,20 +1390,44 @@ namespace Edamam
             var statsPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
-                FlowDirection = FlowDirection.TopDown,
+                FlowDirection = FlowDirection.LeftToRight,
                 AutoSize = true,
-                WrapContents = false,
+                WrapContents = true,
                 Margin = new Padding(0, 0, 0, 25),
-                BackColor = Color.FromArgb(248, 248, 248),
-                Padding = new Padding(12, 12, 12, 12),
-                BorderStyle = BorderStyle.FixedSingle
+                BackColor = Color.White,
+                Padding = new Padding(0)
             };
 
-            // text-based metric labels
+            Label CreateDailyMetricLabel(string text, Color accentColor)
+            {
+                var label = new Label
+                {
+                    Text = text,
+                    Font = new Font("Segoe UI Variable Text", 10, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(58, 65, 78),
+                    BackColor = Color.FromArgb(248, 250, 251),
+                    AutoSize = false,
+                    Width = 220,
+                    Height = 42,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Padding = new Padding(12, 0, 8, 0),
+                    Margin = new Padding(0, 0, 10, 10)
+                };
+                label.Paint += (s, e) =>
+                {
+                    using var borderPen = new Pen(Color.FromArgb(228, 231, 236), 1);
+                    using var accentPen = new Pen(accentColor, 4);
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.DrawRoundedRectangle(borderPen, 0, 0, label.Width - 1, label.Height - 1, 8);
+                    e.Graphics.DrawLine(accentPen, 1, 8, 1, label.Height - 8);
+                };
+                return label;
+            }
+
             var caloriesLabel = new Label
             {
-                Text = $"• Total Calories: {totalCaloriesToday:F0} kcal",
-                Font = new Font("Segoe UI", 11),
+                Text = $"Total Calories: {totalCaloriesToday:F0} kcal",
+                Font = new Font("Segoe UI Variable Text", 11),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 4, 0, 4)
@@ -1361,8 +1435,8 @@ namespace Edamam
 
             var proteinLabel = new Label
             {
-                Text = $"• Total Protein: {totalProteinToday:F1} g",
-                Font = new Font("Segoe UI", 11),
+                Text = $"Total Protein: {totalProteinToday:F1} g",
+                Font = new Font("Segoe UI Variable Text", 11),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 4, 0, 4)
@@ -1370,8 +1444,8 @@ namespace Edamam
 
             var carbsLabel = new Label
             {
-                Text = $"• Total Carbohydrates: {totalCarbsToday:F1} g",
-                Font = new Font("Segoe UI", 11),
+                Text = $"Total Carbohydrates: {totalCarbsToday:F1} g",
+                Font = new Font("Segoe UI Variable Text", 11),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 4, 0, 4)
@@ -1379,8 +1453,8 @@ namespace Edamam
 
             var fatLabel = new Label
             {
-                Text = $"• Total Fat: {totalFatToday:F1} g",
-                Font = new Font("Segoe UI", 11),
+                Text = $"Total Fat: {totalFatToday:F1} g",
+                Font = new Font("Segoe UI Variable Text", 11),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 4, 0, 4)
@@ -1388,8 +1462,8 @@ namespace Edamam
 
             var sodiumLabel = new Label
             {
-                Text = $"• Total Sodium: {totalSodiumToday:F0} mg",
-                Font = new Font("Segoe UI", 11),
+                Text = $"Total Sodium: {totalSodiumToday:F0} mg",
+                Font = new Font("Segoe UI Variable Text", 11),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 4, 0, 4)
@@ -1397,8 +1471,8 @@ namespace Edamam
 
             var sugarLabel = new Label
             {
-                Text = $"• Total Sugar: {totalSugarToday:F1} g",
-                Font = new Font("Segoe UI", 11),
+                Text = $"Total Sugar: {totalSugarToday:F1} g",
+                Font = new Font("Segoe UI Variable Text", 11),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 4, 0, 4)
@@ -1406,25 +1480,25 @@ namespace Edamam
 
             var saturatedFatLabel = new Label
             {
-                Text = $"• Total Saturated Fat: {totalSaturatedFatToday:F1} g",
-                Font = new Font("Segoe UI", 11),
+                Text = $"Total Saturated Fat: {totalSaturatedFatToday:F1} g",
+                Font = new Font("Segoe UI Variable Text", 11),
                 ForeColor = Color.FromArgb(60, 60, 60),
                 AutoSize = true,
                 Margin = new Padding(0, 4, 0, 4)
             };
 
-            statsPanel.Controls.Add(caloriesLabel);
-            statsPanel.Controls.Add(proteinLabel);
-            statsPanel.Controls.Add(carbsLabel);
-            statsPanel.Controls.Add(fatLabel);
-            statsPanel.Controls.Add(sodiumLabel);
-            statsPanel.Controls.Add(sugarLabel);
-            statsPanel.Controls.Add(saturatedFatLabel);
+            statsPanel.Controls.Add(CreateDailyMetricLabel(caloriesLabel.Text, Color.FromArgb(244, 120, 80)));
+            statsPanel.Controls.Add(CreateDailyMetricLabel(proteinLabel.Text, Color.FromArgb(51, 150, 243)));
+            statsPanel.Controls.Add(CreateDailyMetricLabel(carbsLabel.Text, Color.FromArgb(255, 152, 0)));
+            statsPanel.Controls.Add(CreateDailyMetricLabel(fatLabel.Text, Color.FromArgb(156, 39, 176)));
+            statsPanel.Controls.Add(CreateDailyMetricLabel(sodiumLabel.Text, Color.FromArgb(76, 175, 80)));
+            statsPanel.Controls.Add(CreateDailyMetricLabel(sugarLabel.Text, Color.FromArgb(244, 67, 54)));
+            statsPanel.Controls.Add(CreateDailyMetricLabel(saturatedFatLabel.Text, Color.FromArgb(120, 120, 120)));
 
             var mealsLabel = new Label
             {
                 Text = "Today's Meals",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Font = new Font("Segoe UI Variable Text", 12, FontStyle.Bold),
                 ForeColor = Color.FromArgb(33, 33, 33),
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 12),
@@ -1444,7 +1518,7 @@ namespace Edamam
                 var noMealsLabel = new Label
                 {
                     Text = "No meals recorded for today",
-                    Font = new Font("Segoe UI", 11),
+                    Font = new Font("Segoe UI Variable Text", 11),
                     ForeColor = Color.FromArgb(150, 150, 150),
                     AutoSize = true,
                     Margin = new Padding(0, 15, 0, 0)
@@ -1457,19 +1531,24 @@ namespace Edamam
                 {
                     var mealCard = new Panel
                     {
-                        Width = 700,
+                        Width = Math.Max(360, _currentContentPanel.ClientSize.Width - 60),
                         AutoSize = true,
-                        BackColor = Color.FromArgb(250, 250, 250),
-                        BorderStyle = BorderStyle.FixedSingle,
+                        BackColor = Color.White,
                         Margin = new Padding(0, 0, 0, 12),
                         Padding = new Padding(15, 12, 15, 12)
+                    };
+                    mealCard.Paint += (s, e) =>
+                    {
+                        using var pen = new Pen(Color.FromArgb(228, 231, 236), 1);
+                        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                        e.Graphics.DrawRoundedRectangle(pen, 0, 0, mealCard.Width - 1, mealCard.Height - 1, 8);
                     };
 
                     var mealNameLabel = new Label
                     {
                         Text = $"{meal.Name} ({meal.Type})",
-                        Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                        ForeColor = Color.FromArgb(33, 33, 33),
+                        Font = new Font("Segoe UI Variable Text", 11, FontStyle.Bold),
+                        ForeColor = Color.FromArgb(28, 62, 49),
                         AutoSize = true,
                         Margin = new Padding(0, 0, 0, 8)
                     };
@@ -1477,7 +1556,7 @@ namespace Edamam
                     var mealNutriLabel = new Label
                     {
                         Text = $"{meal.Nutritionals?.Calories:F0} kcal  |  {meal.Nutritionals?.Protein:F1}g protein  |  {meal.Nutritionals?.Carbohydrates:F1}g carbs  |  {meal.Nutritionals?.Fat:F1}g fat",
-                        Font = new Font("Segoe UI", 10),
+                        Font = new Font("Segoe UI Variable Text", 10),
                         ForeColor = Color.FromArgb(100, 100, 100),
                         AutoSize = true,
                         Margin = new Padding(0, 0, 0, 0)
@@ -1594,7 +1673,7 @@ namespace Edamam
                 UpdateStatus("Analyzing meal nutrition...");
                 var created = await _controller.CreateMealAsync(mealName, mealType, mealDate, recipesText);
 
-                UpdateStatus($"✓ Meal '{mealName}' created with {created.Nutritionals?.Calories.ToString("F0") ?? "0"} calories");
+                UpdateStatus($"Done: Meal '{mealName}' created with {created.Nutritionals?.Calories.ToString("F0") ?? "0"} calories");
                 TextBoxMealName.Clear();
                 TextBoxRecipes.Clear();
                 ComboBoxMealType.SelectedIndex = 0;
@@ -1614,9 +1693,10 @@ namespace Edamam
 
         private async void TextBoxChatInput_KeyDown(object? sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Enter && e.Control)
+            if (e.KeyCode == Keys.Enter && !e.Shift)
             {
                 e.Handled = true;
+                e.SuppressKeyPress = true;
                 await SendChatMessageAsync();
             }
         }
@@ -1670,7 +1750,7 @@ namespace Edamam
                 }
 
                 AppendChatBubble(response ?? "", isUser: false);
-                UpdateStatus("✓ Response received");
+                UpdateStatus("Done: Response received");
             }
             catch (Exception ex)
             {
@@ -1678,7 +1758,7 @@ namespace Edamam
                 var errorTitle = _controller.GetChatErrorTitle(ex);
                 var errorMsg = _controller.GetChatErrorMessage(ex);
                 ShowError(errorTitle, errorMsg);
-                UpdateStatus($"✗ Error: {msg}");
+                UpdateStatus($"Error: {msg}");
             }
             finally
             {
@@ -1697,70 +1777,98 @@ namespace Edamam
 
         private void AppendChatBubble(string message, bool isUser)
         {
-            if (isUser)
+            var row = new Panel
             {
-                // User message bubble - vibrant green with white text
-                // Add spacing before bubble
-                TextBoxChatHistory.AppendText("\n");
+                Width = Math.Max(260, ChatHistoryPanel.ClientSize.Width - 32),
+                AutoSize = false,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0, 0, 0, 12)
+            };
 
-                // Add the label "You" in smaller font and different style
-                TextBoxChatHistory.AppendText("You");
-                var youLabelStart = TextBoxChatHistory.TextLength - 3;
-                TextBoxChatHistory.Select(youLabelStart, 3);
-                TextBoxChatHistory.SelectionFont = new Font("Segoe UI", 8, FontStyle.Bold);
-                TextBoxChatHistory.SelectionColor = Color.FromArgb(52, 168, 83);
-
-                // New line before bubble content
-                TextBoxChatHistory.AppendText("\n");
-                var bubbleStart = TextBoxChatHistory.TextLength;
-
-                // Add message with padding effect (spaces at start and end)
-                TextBoxChatHistory.AppendText("  " + message + "  ");
-                var bubbleEnd = TextBoxChatHistory.TextLength;
-
-                // Format the entire bubble content with green background
-                TextBoxChatHistory.Select(bubbleStart, bubbleEnd - bubbleStart);
-                TextBoxChatHistory.SelectionColor = Color.White;
-                TextBoxChatHistory.SelectionBackColor = Color.FromArgb(52, 168, 83); // Vibrant green
-                TextBoxChatHistory.SelectionFont = new Font("Segoe UI", 9);
-
-                // Add spacing after
-                TextBoxChatHistory.AppendText("\n");
-                TextBoxChatHistory.Select(TextBoxChatHistory.TextLength, 0);
-            }
-            else
+            var author = new Label
             {
-                // AI message bubble - light sage green with dark text
-                // Add spacing before bubble
-                TextBoxChatHistory.AppendText("\n");
+                Text = isUser ? "You" : "Coach",
+                Font = new Font("Segoe UI Variable Text", 8, FontStyle.Bold),
+                ForeColor = isUser ? Color.FromArgb(52, 168, 83) : Color.FromArgb(31, 71, 55),
+                AutoSize = true,
+                Location = new Point(isUser ? Math.Max(0, row.Width - 48) : 0, 0)
+            };
 
-                // Add the label "Coach" in smaller font and different style
-                TextBoxChatHistory.AppendText("Coach");
-                var coachLabelStart = TextBoxChatHistory.TextLength - 5;
-                TextBoxChatHistory.Select(coachLabelStart, 5);
-                TextBoxChatHistory.SelectionFont = new Font("Segoe UI", 8, FontStyle.Bold);
-                TextBoxChatHistory.SelectionColor = Color.FromArgb(31, 71, 55);
+            var bubble = new Panel
+            {
+                BackColor = isUser ? Color.FromArgb(52, 168, 83) : Color.FromArgb(229, 242, 235),
+                AutoSize = false,
+                Margin = new Padding(0),
+                Location = new Point(0, 20)
+            };
+            var bubbleText = new Label
+            {
+                Text = message,
+                Font = new Font("Segoe UI Variable Text", 9.5F),
+                ForeColor = isUser ? Color.White : Color.FromArgb(31, 40, 36),
+                BackColor = Color.Transparent,
+                AutoSize = false,
+                MaximumSize = new Size(Math.Max(180, row.Width - 88), 0),
+                Location = new Point(12, 9),
+                Margin = new Padding(0)
+            };
+            bubble.Paint += (s, e) =>
+            {
+                using var brush = new SolidBrush(bubble.BackColor);
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                e.Graphics.FillRoundedRectangle(brush, 0, 0, bubble.Width, bubble.Height, 14);
+            };
+            bubble.Controls.Add(bubbleText);
 
-                // New line before bubble content
-                TextBoxChatHistory.AppendText("\n");
-                var bubbleStart = TextBoxChatHistory.TextLength;
+            row.Controls.Add(author);
+            row.Controls.Add(bubble);
+            row.Resize += (s, e) => AlignChatBubble(row, bubble, author, isUser);
+            ChatHistoryPanel.Controls.Add(row);
+            AlignChatBubble(row, bubble, author, isUser);
+            ChatHistoryPanel.ScrollControlIntoView(row);
+            BeginInvoke(new Action(() =>
+            {
+                ResizeChatRows();
+                ChatHistoryPanel.ScrollControlIntoView(row);
+            }));
+        }
 
-                // Add message with padding effect (spaces at start and end)
-                TextBoxChatHistory.AppendText("  " + message + "  ");
-                var bubbleEnd = TextBoxChatHistory.TextLength;
+        private void AlignChatBubble(Panel row, Panel bubble, Label author, bool isUser)
+        {
+            var bubbleText = bubble.Controls.OfType<Label>().FirstOrDefault();
+            if (bubbleText != null)
+            {
+                var maxTextWidth = Math.Max(180, row.Width - 88);
+                var preferredTextSize = TextRenderer.MeasureText(
+                    bubbleText.Text,
+                    bubbleText.Font,
+                    new Size(maxTextWidth, int.MaxValue),
+                    TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl);
 
-                // Format the entire bubble content with light sage background
-                TextBoxChatHistory.Select(bubbleStart, bubbleEnd - bubbleStart);
-                TextBoxChatHistory.SelectionColor = Color.FromArgb(33, 33, 33);
-                TextBoxChatHistory.SelectionBackColor = Color.FromArgb(220, 240, 230); // Light sage green
-                TextBoxChatHistory.SelectionFont = new Font("Segoe UI", 9);
-
-                // Add spacing after
-                TextBoxChatHistory.AppendText("\n");
-                TextBoxChatHistory.Select(TextBoxChatHistory.TextLength, 0);
+                preferredTextSize.Width = Math.Min(preferredTextSize.Width, maxTextWidth);
+                bubbleText.MaximumSize = new Size(maxTextWidth, 0);
+                bubbleText.Size = preferredTextSize;
+                bubble.Size = new Size(preferredTextSize.Width + 24, preferredTextSize.Height + 18);
             }
 
-            TextBoxChatHistory.ScrollToCaret();
+            bubble.Location = new Point(isUser ? Math.Max(0, row.Width - bubble.Width - 2) : 0, 20);
+            author.Location = new Point(isUser ? Math.Max(0, row.Width - author.Width - 4) : 2, 0);
+            row.Height = bubble.Bottom + 2;
+        }
+
+        private void ResizeChatRows()
+        {
+            foreach (Control control in ChatHistoryPanel.Controls)
+            {
+                if (control is not Panel row || row.Controls.Count < 2)
+                    continue;
+
+                row.Width = Math.Max(260, ChatHistoryPanel.ClientSize.Width - 32);
+                var bubble = row.Controls.OfType<Panel>().FirstOrDefault();
+                var author = row.Controls.OfType<Label>().First();
+                if (bubble != null)
+                    AlignChatBubble(row, bubble, author, author.Text == "You");
+            }
         }
 
         private void UpdateStatus(string message)
@@ -1817,3 +1925,5 @@ namespace System.Drawing
         }
     }
 }
+
+
