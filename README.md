@@ -1,112 +1,62 @@
-# Edamame 🥗
+# Edamame
 
 ![UML Class Diagram - Edamame Architecture](docs/architecture.svg)
 
-Edamame is a desktop meal-planning and nutrition analysis application. It helps users create meals from recipes, analyze nutritional content, and get simple dietary advice. The project includes a WinForms presentation layer, domain entities for recipes and meals, and services that call AI/third-party nutrition analysis APIs.
+## Project Title
+Edamame — Meal planner and nutrition analysis desktop app
 
-## Key ideas 💡
+## Project Description and Purpose
+Edamame is a WinForms desktop application for composing meals from recipes, parsing ingredient lines, and producing nutrition estimates and simple dietary advice. The primary purpose is to let users build meals, calculate calories and macronutrients, and get easy-to-understand guidance based on analyzed nutrition data.
 
-- Create and combine recipes into meals 🍽️
-- Calculate calories, macronutrients and other nutrition facts 🔢
-- Provide basic dietary classification and guidance 🩺
+## UML Diagram
+The class/architecture UML diagram above (`docs/architecture.svg`) shows the high-level structure: Domain entities (Meal, Recipe, Ingredient, NutritionalMetric), interfaces (IRepository<T>, INutritionAnalysisService, IIngredientParser, etc.), application services (MealService, DailyMealAggregator, DashboardService), infrastructure (LiteDb repository, Gemini/AI nutrition service, IngredientParser), and presentation (WinForms `MainForm`, controllers, UI services).
 
-## Architecture / UML diagram 🏗️
+> To display the diagram inline on GitHub, ensure `docs/architecture.svg` exists in the repository root (it is included in this workspace).
 
-The diagram above shows the class architecture including:
-- **Domain Entities**: EntityBase, Meal, Recipe, Ingredient, NutritionalBase, NutritionalMetric, MealType
-- **Domain Interfaces**: IRepository<T>, IMealService, IDailyMealAggregator, INutritionAnalysisService, IGeminiChatService, IIngredientParser
-- **Application Layer**: MealService, DailyMealAggregator, DashboardService, MealUIService, ChatUIService, BmiUIService, SettingsService
-- **Infrastructure Layer**: LiteDbRepository<T>, LiteDbConnectionFactory, GeminiChatService, NullChatService, GeminiNutritionAnalysisService, IngredientParser, ServiceCollectionExtensions
-- **Presentation Layer**: IFormController, FormController, MainForm, Program, DashboardData (DTO)
+## Features and Functionalities
+- Create, edit and combine recipes into meals
+- Parse ingredient lines and normalize quantity/unit/name
+- Analyze meals and recipes for calories, protein, carbs, fat, sodium, sugar, saturated fat
+- Provide basic dietary classification and short dietary advice
+- In-memory caching for nutrition lookups to reduce repeated API calls
+- WinForms UI for creating meals, viewing analysis, and editing recipes
 
-To render the UML diagram directly in the README, download your SVG/PNG into `docs/architecture.svg` (or `docs/architecture.png`) and keep the image path above.
+## How the program works (high level)
+1. User creates or edits recipes with ingredient lines.
+2. Ingredients are parsed and normalized by `IngredientParser` (quantity, unit, name).
+3. When a meal is analyzed the app collects all ingredient lines and calls an `INutritionAnalysisService` implementation (e.g., `GeminiNutritionAnalysisService`) which sends a deterministic prompt to the AI/third-party nutrition service and expects a JSON response with nutrient fields.
+4. The response is parsed into `NutritionalMetric` and cached in memory keyed by normalized ingredient set.
+5. The UI displays summarized nutrition metrics and a short dietary classification/advice string.
+6. Repositories (LiteDB) persist recipes and meals locally.
 
-## UI (high level) 🖥️
+## Instructions to run the application
+Prerequisites:
+- .NET 10 SDK installed: https://dotnet.microsoft.com
+- Visual Studio Community 2026 (recommended) or VS Code
 
-- Main window with a recipe list and meal builder 🧾
-- Nutrition analysis results with summary metrics and simple advice 📊
-- Recipe editor and ingredient parser ✍️
-
-## Features ✨
-
-- Create, edit and combine recipes 📝
-- Ingredient parsing with quantity/unit normalization 🔎
-- Nutrition analysis via AI/third-party service (Gemini / Edamam-style) 🤖
-- In-memory caching of recent nutrition lookups for improved performance ⚡
-
-## Tech stack 🛠️
-
-- .NET 10 ⚙️
-- WinForms desktop UI (Presentation project) 🪟
-- C# for domain, services and infrastructure 🧑‍💻
-- Google GenAI client (used in `Infrastructure/ExternalServices`) 🤝
-
-## Getting started 🚀
-
-### Prerequisites ✅
-
-- .NET 10 SDK: https://dotnet.microsoft.com
-- Visual Studio Community 2026 (18.4.3) or Visual Studio Code
-
-### Clone the repository 📦
-
-```bash
-git clone https://github.com/j-davidv/Edamame.git
-cd Edamame
-```
-
-### Configuration 🔧
-
-The nutrition analysis service requires an API key for the AI provider. Provide it via environment variable or other configuration.
-
-#### Setting up API Keys 🔑
-
-**Option 1: Environment Variable (Recommended)**
-
-```powershell
-# Windows (PowerShell)
-$env:GEMINI_API_KEY = "your_gemini_api_key_here"
-```
-
-**Option 2: Use user secrets / local configuration**
-
-Place keys in your local configuration or secrets store and load them at startup when constructing the analysis service.
-
-### Build and run ▶️
-
-#### Visual Studio
-
+Run in Visual Studio:
 1. Open `Edamame.sln` in Visual Studio
 2. Restore NuGet packages
 3. Build the solution (target .NET 10)
 4. Set the WinForms project in `Presentation/` as the Startup Project and run (F5)
 
-#### CLI
-
+Run from CLI:
 ```powershell
 dotnet build
 dotnet run --project Presentation/Presentation.csproj
 ```
 
-## Notes 📝
+Configuration:
+- Provide any required API keys (example for Gemini-based analysis):
+  - Windows PowerShell: `$env:GEMINI_API_KEY = "your_gemini_api_key_here"`
+  - Or set in your OS environment variables / secrets store used by your configuration.
 
-- The application caches nutrition lookups in-memory; the cache resets when the app exits.
-- Ingredient lines are normalized before sending to the AI service to improve parsing and deterministic results.
-- The AI client configuration may use `Temperature = 0` for deterministic outputs where applicable.
+Notes:
+- The AI-based nutrition service expects a deterministic output (temperature=0) and returns a JSON object which the service parses; malformed responses may cause an error.
 
-## Contributing 🤝
+## Developers / Team Members
+- John David M. Villan
+- Ivan C. Desierto
+- Russell Matthew Tañedo
 
-Contributions are welcome. Open issues for bugs or feature requests and submit pull requests for proposed changes.
-
-## License 📜
-
-Check the repository root for a `LICENSE` file. If none exists, contact the project owner to confirm licensing.
-
-## Useful files 📁
-
-- `Presentation/` — WinForms UI project
-- `Domain/Entities/Recipe.cs` — recipe and ingredient models
-- `Infrastructure/ExternalServices/GeminiNutritionAnalysisService.cs` — AI nutrition analysis implementation
-- `Infrastructure/Configuration/ServiceCollectionExtensions.cs` — DI and service registration
-
-If you need help building or running the app locally, open an issue with your OS, .NET SDK version and any build errors.
+If you want additional screenshots, or prefer the UML exported as PNG for smaller rendering, I can add that to `docs/` and update the README accordingly.
