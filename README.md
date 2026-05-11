@@ -58,4 +58,4 @@ Notes:
 ## Developers / Team Members
 - John David M. Villan
 - Ivan C. Desierto
-- Russell Matthew Tañedo
+- Russell Matthew A. Tañedo
