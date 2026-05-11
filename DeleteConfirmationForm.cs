@@ -7,14 +7,14 @@ namespace Edamam
     {
         public DeleteConfirmationForm(string message = "Are you sure you want to delete this meal?")
         {
-            // avoid semi-transparent BackColor on controls (WinForms doesn't support alpha)
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterParent;
-            BackColor = Color.FromArgb(240, 240, 240); // solid light gray outer (no alpha)
+            BackColor = Color.Black;
+            TransparencyKey = Color.Black; 
             ClientSize = new Size(600, 260);
             ShowInTaskbar = false;
+            Opacity = 0.8; 
 
-            // inner white card with subtle border to make it distinct
             var card = new Panel
             {
                 BackColor = Color.White,
@@ -24,9 +24,20 @@ namespace Edamam
 
             card.Paint += (s, e) =>
             {
-                using var pen = new Pen(Color.FromArgb(220, 220, 220), 1);
+                using var brush = new SolidBrush(Color.White);
+                using var shadowPen = new Pen(Color.FromArgb(20, 0, 0, 0), 1);
+                using var borderPen = new Pen(Color.FromArgb(220, 220, 220), 1);
+                
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                e.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
+                
+                // Subtle drop shadow
+                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(15, 0, 0, 0)), 2, 2, card.Width - 4, card.Height - 4);
+                
+                // White background
+                e.Graphics.FillRectangle(brush, 0, 0, card.Width, card.Height);
+                
+                // Subtle border
+                e.Graphics.DrawRectangle(borderPen, 0, 0, card.Width - 1, card.Height - 1);
             };
 
             var title = new Label
