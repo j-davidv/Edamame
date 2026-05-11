@@ -7,7 +7,7 @@ using Edamam.Application.Interfaces;
 
 namespace Edamam
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         private readonly IFormController _controller;
         private Panel _currentContentPanel;
@@ -17,7 +17,7 @@ namespace Edamam
         private string _currentFilterType = "Daily";
         private DateTime _selectedFilterDate = DateTime.Today;
 
-        public Form1(IFormController controller)
+        public MainForm(IFormController controller)
         {
             InitializeComponent();
             _controller = controller ?? throw new ArgumentNullException(nameof(controller));
@@ -25,7 +25,7 @@ namespace Edamam
             ChatHistoryPanel.SizeChanged += (s, e) => ResizeChatRows();
         }
 
-        private async void Form1_Load(object sender, EventArgs e)
+        private async void MainForm_Load(object sender, EventArgs e)
         {
             try
             {

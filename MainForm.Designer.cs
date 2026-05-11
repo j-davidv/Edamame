@@ -1,6 +1,6 @@
 ﻿namespace Edamam
 {
-    partial class Form1
+    partial class MainForm
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -778,7 +778,7 @@
             Text = "Edamam - Meal Planner";
             Font = new Font("Segoe UI Variable Text", 9F);
             BackColor = appBackground;
-            Load += Form1_Load;
+            Load += MainForm_Load;
         }
 
         private Label CreateLabel(string text)

@@ -32,7 +32,7 @@ namespace Edamam
 
             // create and run the main form 
             var controller = serviceProvider.GetRequiredService<IFormController>();
-            var form = new Form1(controller);
+            var form = new MainForm(controller);
             RunWindowsFormsApp(form);
         }
 
