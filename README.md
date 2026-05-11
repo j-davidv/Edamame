@@ -1,10 +1,6 @@
 # Edamame
 
-<!-- UML diagram preview (local PNG in Assets) -->
 
-<img src="Assets/Meal%20Analysis%20Framework-2026-05-11-121649.png" alt="UML Class Diagram - Edamame Architecture" width="900" />
-
-[View full-size diagram](Assets/Meal%20Analysis%20Framework-2026-05-11-121649.png)
 
 ## Project Title
 Edamame — Meal planner and nutrition analysis desktop app
@@ -13,7 +9,10 @@ Edamame — Meal planner and nutrition analysis desktop app
 Edamame is a WinForms desktop application for composing meals from recipes, parsing ingredient lines, and producing nutrition estimates and simple dietary advice. The primary purpose is to let users build meals, calculate calories and macronutrients, and get easy-to-understand guidance based on analyzed nutrition data.
 
 ## UML Diagram
-The diagram above is a preview of `Assets/Meal Analysis Framework-2026-05-11-121649.png`. If you previously created an SVG (`docs/architecture.svg`) you may remove it if you no longer need the vector source.
+
+<img src="Assets/Meal%20Analysis%20Framework-2026-05-11-121649.png" alt="UML Class Diagram - Edamame Architecture" width="900" />
+
+[View full-size diagram](Assets/Meal%20Analysis%20Framework-2026-05-11-121649.png)
 
 ## Features and Functionalities
 - Create, edit and combine recipes into meals
@@ -23,7 +22,7 @@ The diagram above is a preview of `Assets/Meal Analysis Framework-2026-05-11-121
 - In-memory caching for nutrition lookups to reduce repeated API calls
 - WinForms UI for creating meals, viewing analysis, and editing recipes
 
-## How the program works (high level)
+## How the program works
 1. User creates or edits recipes with ingredient lines.
 2. Ingredients are parsed and normalized by `IngredientParser` (quantity, unit, name).
 3. When a meal is analyzed the app collects all ingredient lines and calls an `INutritionAnalysisService` implementation (e.g., `GeminiNutritionAnalysisService`) which sends a deterministic prompt to the AI/third-party nutrition service and expects a JSON response with nutrient fields.
